@@ -22,7 +22,6 @@
         uniform int func;
         uniform float timeScale;
         uniform float voltScale;
-        uniform float amplitude;
         uniform float time;
         float pi = 3.14159;
         
@@ -62,14 +61,14 @@
         }
         void main(){
             float x = (vTimeSample*(2.0/9999.0)-1.0);
-            gl_Position = vec4(x,amplitude * computeFunction(time + x * 2.0 * pi * timeScale) / voltScale , 0.0, 1.0);
+            gl_Position = vec4(x,computeFunction((time + x) * 2.0 * pi * timeScale) / voltScale , 0.0, 1.0);
         }
     </script>
     <script id="fragment-shader" type="x-shader/x-fragment">
       precision mediump float; 
       uniform vec4 color;
       void main() {
-          gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+          gl_FragColor = color;
       }
     </script>
 
@@ -84,27 +83,7 @@
     <canvas id="gl-canvas" width="512" height="512">
         Oops... your browser doesn't support the HTML5 canvas element"
     </canvas>
-    <p></p>
-    <div>
-        <input type="range" id="timeSlider" min="0.0001" max="10" value="1" step="0.0001"
-            oninput="timeValue.value=timeSlider.value">
-
-        <output id="timeValue" name="timeValue" for="timeSlider">1</output>
-    </div>
-
-
-    <div>
-        VoltageScale 0.1<input id="voltSlider" type="range" min="0.1" max="500" value="1" step="0.1"
-            oninput="voltValue.value=voltSlider.value">
-        <output id="voltValue" for="voltSlider">1</output>
-    </div>
-
-    <div>
-        <label>WaveVoltage (0.1 - 500)</label>
-        <input id="amplitude" type="number" min="0.1" max="500">
-    </div>
-
-    <select id="function">
+    <select id="function" multiple size="7">
         <option value="1">C4</option>
         <option value="2">E4</option>
         <option value="3">G4</option>
@@ -113,6 +92,20 @@
         <option value="6">F4#</option>
         <option value="7">Sustenido</option>
     </select>
+
+    <div>
+        Time Scale:
+        <input id="timeSlider" type="range" min="0" value="0" max="15" step="1">
+        <span id="timeScale"> </span>
+    </div>
+    <div>
+        Volt Scale:
+        <input id="voltSlider" type="range" min="0" value="0" max="11" step="1">
+        <span id="voltScale"> </span>
+    </div>
+
+
+
 
 </body>
 

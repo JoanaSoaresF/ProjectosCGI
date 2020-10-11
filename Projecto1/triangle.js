@@ -1,4 +1,3 @@
-
 //Variables
 
 var gl;
@@ -14,7 +13,6 @@ var colorLoc;
 var vPosition;
 var voltScaleLoc;
 var timeScaleLoc;
-var amplitudeLoc;
 var timeLoc;
 var time = 0;
 
@@ -72,8 +70,8 @@ window.onload = function init() {
     funcLoc = gl.getUniformLocation(program, "func");
     voltScaleLoc = gl.getUniformLocation(program, "voltScale");
     timeScaleLoc = gl.getUniformLocation(program, "timeScale");
-    amplitudeLoc = gl.getUniformLocation(program, "amplitude");
     timeLoc = gl.getUniformLocation(program, "time");
+    colorLoc = gl.getUniformLocation(program, "color");
 
 
 
@@ -94,21 +92,25 @@ function drawGrid() {
     }
 
 }
-function drawFunction() {
+function drawFunction(func) {
     gl.useProgram(program);
-    gl.uniform1i(funcLoc, document.getElementById("function").value);
-    gl.uniform1f(voltScaleLoc, document.getElementById("voltSlider").value * NUM_LINES);
-    gl.uniform1f(timeScaleLoc, document.getElementById("timeSlider").value * NUM_COLS);
-    gl.uniform1f(amplitudeLoc, document.getElementById("amplitude").value * NUM_LINES);
+
+    gl.uniform1i(funcLoc, func);
+    computeColor(func);
+
+    var voltScale = voltsScaleInput() * NUM_LINES;
+    gl.uniform1f(voltScaleLoc, voltScale);
+
+    var timeScale = timeScaleInput() * NUM_COLS;
+    gl.uniform1f(timeScaleLoc, timeScale);
     gl.uniform1f(timeLoc, time);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
     gl.vertexAttribPointer(vTimeSample, 1, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vTimeSample);
 
-
+    computeColor(func);
     gl.drawArrays(gl.LINE_STRIP, 0, 9999);
-    time += 1 / (60 * 100);
 
 }
 
@@ -117,9 +119,67 @@ function render() {
 
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    drawFunction();
+    selectedFunctions();
+    time += 1 / (60 * 1.5);
+
     drawGrid();
 
     requestAnimFrame(render);
 }
+
+function timeScaleInput() {
+    var values = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10];    //values to step to
+
+    var input = document.getElementById('timeSlider'),
+        output = document.getElementById('timeScale');
+
+    input.oninput = function () {
+        output.innerHTML = values[input.value];
+    };
+    input.oninput(); //set default value
+
+    return values[input.value];
+
+
+}
+
+function voltsScaleInput() {
+    var values = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];    //values to step to
+
+    var input = document.getElementById('voltSlider'),
+        output = document.getElementById('voltScale');
+
+    input.oninput = function () {
+        output.innerHTML = values[input.value];
+    };
+    input.oninput(); //set default value
+    return values[input.value];
+}
+
+function selectedFunctions() {
+    var fList = document.getElementById("function");
+    var functions = fList.selectedOptions;
+
+    for (var i = 0; i < functions.length; i++) {
+        var f = functions[i].value;
+
+        drawFunction(f);
+    }
+}
+
+function computeColor(f) {
+    colorLoc = gl.getUniformLocation(program, "color");
+    switch (f) {
+        case "1": gl.uniform4fv(colorLoc, [1.0, 0.0, 0.0, 1.0]); break;
+        case "2": gl.uniform4fv(colorLoc, [0.0, 1.0, 0.0, 1.0]); break;
+        case "3": gl.uniform4fv(colorLoc, [0.0, 0.0, 1.0, 1.0]); break;
+        case "4": gl.uniform4fv(colorLoc, [0.0, 1.0, 1.0, 1.0]); break;
+        case "5": gl.uniform4fv(colorLoc, [1.0, 0.0, 1.0, 1.0]); break;
+        case "6": gl.uniform4fv(colorLoc, [1.0, 1.0, 0.0, 1.0]); break;
+        case "7": gl.uniform4fv(colorLoc, [0.95, 0.55, 0.0, 1.0]); break;
+        default: break;
+    }
+
+}
+
 
