@@ -19,7 +19,8 @@
     <!---FUNCTIONS-->
     <script id="vertex-shader" type="x-shader/x-vertex">
         attribute float vTimeSample;
-        uniform int func;
+        uniform int xFunc;
+        uniform int yFunc;
         uniform float timeScale;
         uniform float voltScale;
         uniform float time;
@@ -41,27 +42,35 @@
             return sin(392.00 * x);
         }
         
-        float computeFunction(float x) {
-                           
-            if (func == 1) {
-                return c4(x);
+        float computeFunction(int func, float y) {
+
+            float add = (timeScale * vTimeSample) / 10000.0;
+            float y1 = (y + add) * 2.0 * pi;
+            float a=(vTimeSample * (2.0 / 9999.0) - 1.0);
+
+            if (func == 0) {
+                float x1 = add*(2.0/timeScale)-1.0;
+                return x1;
+            } else if (func == 1) {
+                return (c4(y1));
             } else if (func == 2){
-                return e4(x);
+                return (e4(y1));
             } else if (func == 3){
-                return g4(x);
-            } else if( func == 4) {
-                return c4(x)+e4(x)+g4(x);
+                return (g4(y1));
+            } else if(func == 4) {
+                return (c4(y1)+e4(y1)+g4(y1));
             }else if(func == 5){
-                return f4(x);
+                return (f4(y1));
             } else if(func == 6) {
-                return f4Sharp(x);
+                return (f4Sharp(y1));
             } else if(func == 7) {
-                return f4(x) + f4Sharp(x);
+                return (f4(y1) + f4Sharp(y1));
             }
         }
         void main(){
-            float x = (vTimeSample*(2.0/9999.0)-1.0);
-            gl_Position = vec4(x,computeFunction((x)* 2.0 * pi * timeScale) / voltScale , 0.0, 1.0);
+            float x = computeFunction(xFunc, (time));
+            float y = computeFunction(yFunc, (time)) / voltScale;
+            gl_Position = vec4(x,y, 0.0, 1.0);
         }
     </script>
     <script id="fragment-shader" type="x-shader/x-fragment">
@@ -83,7 +92,7 @@
     <canvas id="gl-canvas" width="512" height="512">
         Oops... your browser doesn't support the HTML5 canvas element"
     </canvas>
-    <select id="function" multiple size="7" value="1">
+    <select id="yFunction" multiple size="7" value="1">
         <option value="1">C4</option>
         <option value="2">E4</option>
         <option value="3">G4</option>
@@ -94,10 +103,10 @@
     </select>
 
     Horizontal Axis
-    <select id="xScale" value="0">
+    <select id="xFunction" value="0">
         <option value="0">Time</option>
         <option value="1">C4</option>
-        <option value="2">E4</option>
+        <option value="2">E4</option>77
         <option value="3">G4</option>
         <option value="4">C4 Maior</option>
         <option value="5">F4</option>
