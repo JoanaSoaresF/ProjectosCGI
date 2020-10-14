@@ -61,7 +61,7 @@
         }
         void main(){
             float x = (vTimeSample*(2.0/9999.0)-1.0);
-            gl_Position = vec4(x,computeFunction((time + x) * 2.0 * pi * timeScale) / voltScale , 0.0, 1.0);
+            gl_Position = vec4(x,computeFunction((x)* 2.0 * pi * timeScale) / voltScale , 0.0, 1.0);
         }
     </script>
     <script id="fragment-shader" type="x-shader/x-fragment">
@@ -83,7 +83,19 @@
     <canvas id="gl-canvas" width="512" height="512">
         Oops... your browser doesn't support the HTML5 canvas element"
     </canvas>
-    <select id="function" multiple size="7">
+    <select id="function" multiple size="7" value="1">
+        <option value="1">C4</option>
+        <option value="2">E4</option>
+        <option value="3">G4</option>
+        <option value="4">C4 Maior</option>
+        <option value="5">F4</option>
+        <option value="6">F4#</option>
+        <option value="7">Sustenido</option>
+    </select>
+
+    Horizontal Axis
+    <select id="xScale" value="0">
+        <option value="0">Time</option>
         <option value="1">C4</option>
         <option value="2">E4</option>
         <option value="3">G4</option>
@@ -94,18 +106,18 @@
     </select>
 
     <div>
-        Time Scale:
+        Seconds/div:
         <input id="timeSlider" type="range" min="0" value="0" max="15" step="1">
         <span id="timeScale"> </span>
+        X Position: <input id="horizontalPos" type="range" min="-4" value="0" max="4" step="0.2">
+
     </div>
     <div>
-        Volt Scale:
+        Volts/div:
         <input id="voltSlider" type="range" min="0" value="0" max="11" step="1">
         <span id="voltScale"> </span>
+        Y Position <input id="verticalPos" type="range" min="-6" value="0" max="6" step="1">
     </div>
-
-
-
 
 </body>
 

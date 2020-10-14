@@ -1,20 +1,14 @@
 //Variables
 
 var gl;
-var gridProgram;
-var program;
-var gridBufferId;
-var bufferId;
-var grid = [];
-var vertices = [];
-var funcLoc;
-var vTimeSample;
-var colorLoc;
-var vPosition;
-var voltScaleLoc;
-var timeScaleLoc;
-var timeLoc;
-var time = 0;
+var gridProgram, program;
+var gridBufferId, bufferId;
+var grid = [], vertices = [], functions = [];
+var funcLoc, colorLoc, voltScaleLoc, timeScaleLoc, timeLoc;
+var vTimeSample, vPosition;
+var time, frame;
+var timeScale, voltScale;
+
 
 //Constants
 const NUM_COLS = 8;
@@ -37,7 +31,40 @@ function formVertex() {
     }
 }
 
+function initCallbacks() {
+    timeScale = 0.0001;
+    voltScale = 0.1;
+    //Callbacks
+    document.getElementById("timeSlider").onchange = function (event) {
+        time = 0;
+        var values = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10];
+        output = document.getElementById('timeScale');
+        output.innerHTML = values[event.target.value];
+        timeScale = values[event.target.value];
+    };
+
+    document.getElementById("voltSlider").onchange = function (event) {
+        time = 0;
+        var values = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];
+        output = document.getElementById('voltScale');
+        output.innerHTML = values[event.target.value];
+        voltScale = values[event.target.value];
+    };
+    document.getElementById("horizontalPos").onchange = function (event) {
+
+    };
+
+    document.getElementById("function").onclick = function (event) {
+        time = 0;
+        var fList = document.getElementById("function");
+        functions = fList.selectedOptions;
+    };
+
+}
+
 window.onload = function init() {
+    time = 0;
+
     var canvas = document.getElementById("gl-canvas");
     gl = WebGLUtils.setupWebGL(canvas);
     if (!gl) { alert("WebGL isn't available"); }
@@ -52,28 +79,29 @@ window.onload = function init() {
     // Load shaders and initialize attribute buffers
     gridProgram = initShaders(gl, "gridVertex-shader", "gridFragment-shader");
     program = initShaders(gl, "vertex-shader", "fragment-shader");
-    //gl.useProgram(program);
+
 
     // Load the data into the GPU
     gridBufferId = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, gridBufferId);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(grid), gl.STATIC_DRAW);
 
-    vPosition = gl.getAttribLocation(gridProgram, "vPosition");
-
     bufferId = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
 
     // Associate our shader variables with our data buffer
+    vPosition = gl.getAttribLocation(gridProgram, "vPosition");
+
     vTimeSample = gl.getAttribLocation(program, "vTimeSample");
+
     funcLoc = gl.getUniformLocation(program, "func");
     voltScaleLoc = gl.getUniformLocation(program, "voltScale");
     timeScaleLoc = gl.getUniformLocation(program, "timeScale");
     timeLoc = gl.getUniformLocation(program, "time");
     colorLoc = gl.getUniformLocation(program, "color");
 
-
+    initCallbacks();
 
     render();
 }
@@ -92,81 +120,6 @@ function drawGrid() {
     }
 
 }
-function drawFunction(func) {
-    gl.useProgram(program);
-
-    gl.uniform1i(funcLoc, func);
-    computeColor(func);
-
-    var voltScale = voltsScaleInput() * NUM_LINES;
-    gl.uniform1f(voltScaleLoc, voltScale);
-
-    var timeScale = timeScaleInput() * NUM_COLS;
-    gl.uniform1f(timeScaleLoc, timeScale);
-    gl.uniform1f(timeLoc, time);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
-    gl.vertexAttribPointer(vTimeSample, 1, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vTimeSample);
-
-    computeColor(func);
-    gl.drawArrays(gl.LINE_STRIP, 0, 9999);
-
-}
-
-
-function render() {
-
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    selectedFunctions();
-    time += 1 / (60 * 1.5);
-
-    drawGrid();
-
-    requestAnimFrame(render);
-}
-
-function timeScaleInput() {
-    var values = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10];    //values to step to
-
-    var input = document.getElementById('timeSlider'),
-        output = document.getElementById('timeScale');
-
-    input.oninput = function () {
-        output.innerHTML = values[input.value];
-    };
-    input.oninput(); //set default value
-
-    return values[input.value];
-
-
-}
-
-function voltsScaleInput() {
-    var values = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];    //values to step to
-
-    var input = document.getElementById('voltSlider'),
-        output = document.getElementById('voltScale');
-
-    input.oninput = function () {
-        output.innerHTML = values[input.value];
-    };
-    input.oninput(); //set default value
-    return values[input.value];
-}
-
-function selectedFunctions() {
-    var fList = document.getElementById("function");
-    var functions = fList.selectedOptions;
-
-    for (var i = 0; i < functions.length; i++) {
-        var f = functions[i].value;
-
-        drawFunction(f);
-    }
-}
-
 function computeColor(f) {
     colorLoc = gl.getUniformLocation(program, "color");
     switch (f) {
@@ -182,4 +135,40 @@ function computeColor(f) {
 
 }
 
+function drawFunction(func) {
+    gl.useProgram(program);
 
+    gl.uniform1i(funcLoc, func);
+    computeColor(func);
+
+    gl.uniform1f(voltScaleLoc, voltScale * NUM_LINES);
+
+    gl.uniform1f(timeScaleLoc, timeScale * NUM_COLS);
+    gl.uniform1f(timeLoc, time);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+    gl.vertexAttribPointer(vTimeSample, 1, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vTimeSample);
+
+    computeColor(func);
+    gl.drawArrays(gl.LINE_STRIP, 0, Math.min(9999 * (time / (NUM_COLS * timeScale)), 9999));
+
+}
+
+
+function render() {
+
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    time += 1 / 60;
+    drawGrid();
+    if (frame++ > timeScale * NUM_COLS) {
+        frame = 0;
+    }
+
+    for (var i = 0; i < functions.length; i++) {
+        var f = functions[i].value;
+        drawFunction(f);
+    }
+    requestAnimFrame(render);
+
+}
