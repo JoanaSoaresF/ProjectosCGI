@@ -44,29 +44,27 @@
             return sin(392.00 * x + xOffset);
         }
         
-        float computeFunction(int func, float y) {
+        float computeFunction(int func, float x) {
 
-            float add = (timeScale * vTimeSample) / 10000.0;
-            float y1 = (y + add) * 2.0 * pi;
-            float a=(vTimeSample * (2.0 / nPoints) - 1.0);
+            float conversion = (timeScale * vTimeSample) / nPoints;
+            float x1 = (x + conversion) * 2.0 * pi;
 
             if (func == 0) {
-                float x1 = add*(2.0/timeScale)-1.0;
-                return x1;
+                return conversion*(2.0/timeScale)-1.0;
             } else if (func == 1) {
-                return (c4(y1));
+                return (c4(x1));
             } else if (func == 2){
-                return (e4(y1));
+                return (e4(x1));
             } else if (func == 3){
-                return (g4(y1));
+                return (g4(x1));
             } else if(func == 4) {
-                return (c4(y1)+e4(y1)+g4(y1));
+                return (c4(x1)+e4(x1)+g4(x1));
             }else if(func == 5){
-                return (f4(y1));
+                return (f4(x1));
             } else if(func == 6) {
-                return (f4Sharp(y1));
+                return (f4Sharp(x1));
             } else if(func == 7) {
-                return (f4(y1) + f4Sharp(y1));
+                return (f4(x1) + f4Sharp(x1));
             }
         }
         void main(){
@@ -135,8 +133,6 @@
             <option value="7">Sustenido</option>
         </select>
     </div>
-
-
 </body>
 
 </html>

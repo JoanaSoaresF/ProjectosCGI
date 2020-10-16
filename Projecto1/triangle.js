@@ -127,7 +127,6 @@ window.onload = function init() {
     nPointsLoc = gl.getUniformLocation(program, "nPoints");
     xOffsetLoc = gl.getUniformLocation(program, "xOffset");
     yOffsetLoc = gl.getUniformLocation(program, "yOffset");
-    gl.uniform1f(nPointsLoc, NUM_POINTS);
 
     //callbacks
     initCallbacks();
@@ -172,15 +171,17 @@ function computeColor(f) {
 function drawFunction(func) {
     gl.useProgram(program);
 
+    //Define functions to draw, and number of points to use
     gl.uniform1i(xFuncLoc, xFunction);
     gl.uniform1i(yFuncLoc, func);
+    gl.uniform1f(nPointsLoc, NUM_POINTS);
 
     computeColor(func);
 
+    //Adjusts the axis's scale and offset
     gl.uniform1f(voltScaleLoc, voltScale * NUM_LINES / 2); //Metade positiva metade negativa
     gl.uniform1f(timeScaleLoc, timeScale * NUM_COLS);
     gl.uniform1f(timeLoc, time);
-
     gl.uniform1f(xOffsetLoc, xOffset);
     gl.uniform1f(yOffsetLoc, yOffset);
 
@@ -222,81 +223,4 @@ function render() {
         drawFunction(f);
     }
     requestAnimFrame(render);
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-        float computeFunction(int func, float x, float y) {
-
-            float y1 = y * 2.0 * pi * timeScale;
-
-            if (func == 0) {
-                return x;
-            } else if (func == 1) {
-                return (c4(y1)) / voltScale;
-            } else if (func == 2){
-                return (e4(y1)) / voltScale;
-            } else if (func == 3){
-                return (g4(y1)) / voltScale;
-            } else if(func == 4) {
-                return (c4(y1)+e4(y1)+g4(y1)) / voltScale;
-            }else if(func == 5){
-                return (f4(y1)) / voltScale;
-            } else if(func == 6) {
-                return (f4Sharp(y1)) / voltScale;
-            } else if(func == 7) {
-                return (f4(y1) + f4Sharp(y1)) / voltScale;
-            }
-        }
-        void main(){
-            float x = (vTimeSample*(2.0/9999.0)-1.0);
-            gl_Position = vec4(computeFunction(xFunc, x, (time+x)),computeFunction(yFunc, x, (time+x)), 0.0, 1.0);
-        }
-
-
-
-        float computeFunction(int func, float y) {
-
-            float add = (timeScale * vTimeSample) / 10000.0;
-            float y1 = (y + add) * 2.0 * pi;
-
-            if (func == 0) {
-                float x1 = (vTimeSample * (2.0 / 9999.0) - 1.0);
-                return x1;
-            } else if (func == 1) {
-                return (c4(y1)) / voltScale;
-            } else if (func == 2){
-                return (e4(y1)) / voltScale;
-            } else if (func == 3){
-                return (g4(y1)) / voltScale;
-            } else if(func == 4) {
-                return (c4(y1)+e4(y1)+g4(y1)) / voltScale;
-            }else if(func == 5){
-                return (f4(y1)) / voltScale;
-            } else if(func == 6) {
-                return (f4Sharp(y1)) / voltScale;
-            } else if(func == 7) {
-                return (f4(y1) + f4Sharp(y1)) / voltScale;
-            }
-        }
-        void main(){
-            float x = computeFunction(xFunc, (time));
-            float y = computeFunction(yFunc, (time));
-            gl_Position = vec4(x,y, 0.0, 1.0);
-        }
-        */
