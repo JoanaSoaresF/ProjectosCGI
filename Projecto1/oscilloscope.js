@@ -1,3 +1,9 @@
+/**
+ * Projeto 1 CGI - Osciloscópio
+ * Gonçalo Loureço nº55780
+ * Joana Faria nº55754
+ */
+
 //Variables
 
 var gl;
@@ -7,8 +13,8 @@ var grid = [], vertices = [], yFunctions = [], xFunction;
 var yFuncLoc, xFuncLoc, colorLoc, voltScaleLoc, timeScaleLoc, timeLoc, nPointsLoc;
 var vTimeSample, vPosition;
 var time, frame;
-var timeScale, voltScale, xOffset, yOffset;
-var xOffsetLoc, yOffsetLoc;
+var timeScale, voltScale, xOffset, yOffset, proportion;
+var xOffsetLoc, yOffsetLoc, proportionLoc;
 
 
 //Constants
@@ -76,6 +82,11 @@ function initCallbacks() {
         var fList = document.getElementById("xFunction");
         xFunction = fList.value;
     };
+    document.getElementById("proportion").onchange = function (event) {
+        proportion = event.target.value;
+        output = document.getElementById('proportionValue');
+        output.innerHTML = event.target.value;
+    };
 
 }
 
@@ -87,6 +98,7 @@ window.onload = function init() {
     voltScale = VOLTS_VALUES[2];
     xOffset = 0;
     yOffset = 0;
+    proportion = 1;
 
 
     var canvas = document.getElementById("gl-canvas");
@@ -127,6 +139,7 @@ window.onload = function init() {
     nPointsLoc = gl.getUniformLocation(program, "nPoints");
     xOffsetLoc = gl.getUniformLocation(program, "xOffset");
     yOffsetLoc = gl.getUniformLocation(program, "yOffset");
+    proportionLoc = gl.getUniformLocation(program, "proportion");
 
     //callbacks
     initCallbacks();
@@ -184,6 +197,15 @@ function drawFunction(func) {
     gl.uniform1f(timeLoc, time);
     gl.uniform1f(xOffsetLoc, xOffset);
     gl.uniform1f(yOffsetLoc, yOffset);
+    gl.uniform1f(yOffsetLoc, yOffset);
+
+    //If the XY mode is enabled then we can adjust the expansion ona a XX's axis 
+    if (xFunction != 0) {
+        gl.uniform1f(proportionLoc, proportion);
+    } else {
+        gl.uniform1f(proportionLoc, 1.0);
+    }
+
 
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
     gl.vertexAttribPointer(vTimeSample, 1, gl.FLOAT, false, 0, 0);

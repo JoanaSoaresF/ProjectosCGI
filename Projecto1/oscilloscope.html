@@ -1,3 +1,9 @@
+<!--- 
+    Projeto 1, Oscilloscope
+    Joana Soares Faria 55754
+    Gonçalo Martins Lourenço 55780  
+-->
+
 <!DOCTYPE html>
 <html>
 
@@ -26,7 +32,9 @@
         uniform float time;
         uniform float nPoints;
         uniform float xOffset, yOffset; 
+        uniform float proportion;
         float pi = 3.14159;
+        
         
         float c4(float x) {
             return sin(261.63 * x + xOffset);
@@ -68,10 +76,7 @@
             }
         }
         void main(){
-            float x = computeFunction(xFunc, time);
-            if(xFunc != 0){
-                x *= 0.5;
-            }
+            float x = computeFunction(xFunc, time) * proportion;
             float y = computeFunction(yFunc, time) / voltScale + yOffset;
             gl_Position = vec4(x,y, 0.0, 1.0);
         }
@@ -87,7 +92,7 @@
     <script type="text/javascript" src="../Common/webgl-utils.js"></script>
     <script type="text/javascript" src="../Common/initShaders.js"></script>
     <script type="text/javascript" src="../Common/MV.js"></script>
-    <script type="text/javascript" src="triangle.js"></script>
+    <script type="text/javascript" src="oscilloscope.js"></script>
 </head>
 
 <body>
@@ -123,6 +128,10 @@
             <input id="timeSlider" type="range" min="0" value="4" max="15" step="1">
             <p></p>
             X Position: <input id="horizontalPos" type="range" min="-3.5" value="0" max="3.5" step="0.1">
+            <p></p>
+            X/Y Proportion: <span id="proportionValue"> </span>
+            <input id="proportion" type="range" min="0" value="1" max="2" step="0.25">
+
         </div>
         <p style="position: absolute; left:250px; top:25px">Variable:</p>
         <select id="xFunction" value="0" style="position: absolute; left:250px; top:65px">
@@ -136,6 +145,7 @@
             <option value="7">Sustenido</option>
         </select>
     </div>
+
 </body>
 
 </html>
