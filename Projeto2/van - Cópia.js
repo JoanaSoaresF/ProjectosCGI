@@ -141,10 +141,10 @@ window.onload = function () {
             case '3': view = FRONT_VIEW; break;
             case '0': view = OUR_VIEW; break;
             case '4': view = OUR_VIEW; break;
-            case 'b': if (speed > 0.4) {speed -= 0.5;}
+            /*case 'b': if (speed > 0.4) {speed -= 0.5;}
                     else if (speed < -0.4) {speed += 0.5;}
                     else {speed = 0;}
-                    break;
+                    break;*/
         }
     }
 

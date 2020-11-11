@@ -9,7 +9,7 @@ var paraboloid_faces_buffer;
 var paraboloid_edges_buffer;
 
 var PARABOLOID_LATS = 20;
-var PARABOLOID_LONS = 30;
+var PARABOLOID_LONS = 30; //TODO talvez 20
 
 function paraboloidInit(gl, nlat, nlon) {
     nlat = nlat | PARABOLOID_LATS;
