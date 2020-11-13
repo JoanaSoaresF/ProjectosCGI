@@ -25,17 +25,28 @@ function paraboloidBuild(nlat, nlon) {
 
     var d_phi = Math.PI / (nlat + 1);
     var d_theta = 2 * Math.PI / nlon;
-    var r = 0.5;
+    var r = 0;
 
-    // Generate north polar cap
-    var north = vec3(0, r, 0);
+    // Generate south polar cap
+    var north = vec3(0, 0, 0);
     paraboloid_points.push(north);
-    paraboloid_normals.push(vec3(0, 1, 0));
+    paraboloid_normals.push(vec3(0, -1, 0));
 
     // Generate middle
-    for (var i = 0, phi = Math.PI / 2 - d_phi; i < nlat; i++, phi -= d_phi) {
+    for (var i = 0 /*, phi = Math.PI / 2 - d_phi*/; i < nlat; i+=2/*, phi -= d_phi*/) {
         for (var j = 0, theta = 0; j < nlon; j++, theta += d_theta) {
-            var pt = vec3(r * Math.cos(phi) * Math.cos(theta), r * Math.sin(phi), r * Math.cos(phi) * Math.sin(theta));
+            r = i / nlat;
+            var pt = vec3(r /* Math.cos(phi)*/ * Math.cos(theta), r*r /* Math.sin(phi)*/, r /* Math.cos(phi)*/ * Math.sin(theta));
+            paraboloid_points.push(pt);
+            var n = vec3(pt);
+            paraboloid_normals.push(normalize(n));
+        }
+    }
+
+    for (var i = nlat /*, phi = Math.PI / 2 - d_phi*/; i > 0; i-=2/*, phi -= d_phi*/) {
+        for (var j = 0, theta = 0; j < nlon; j++, theta += d_theta) {
+            r = i / nlat;
+            var pt = vec3(r  * Math.cos(theta), r*r*0.8, r * Math.sin(theta));
             paraboloid_points.push(pt);
             var n = vec3(pt);
             paraboloid_normals.push(normalize(n));
@@ -43,10 +54,10 @@ function paraboloidBuild(nlat, nlon) {
     }
 
     // Generate norh south cap
-    var south = vec3(0, -r, 0);
+    /*var south = vec3(0, 0.01, 0);
     paraboloid_points.push(south);
     paraboloid_normals.push(vec3(0, -1, 0));
-
+*/
     // Generate the faces
 
     // north pole faces
