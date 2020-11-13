@@ -8,7 +8,7 @@ var mProjectionLoc, mModelViewLoc, colorLoc, fixedColorLoc;
 
 var matrixStack = [];
 var modelView;
-var time, view, wheelsAngle_Y, wheelsAngle_Z, drive, antennaUpAngle, antennaSideAngle, speed, xPos, zPos, vanAngle; 
+var time, view, wheelsAngle_Y, wheelsAngle_Z, antennaUpAngle, antennaSideAngle, speed, xPos, zPos, vanAngle; 
 var fixedColor;
 
 const DEGREE_TO_RADIAN = Math.PI / 180;
@@ -93,11 +93,9 @@ function fit_canvas_to_window() {
 
 }
 
-
 window.onresize = function () {
     fit_canvas_to_window();
 }
-
 
 window.onload = function () {
     canvas = document.getElementById('gl-canvas');
@@ -142,27 +140,29 @@ window.onload = function () {
         var command = (event.key).toLowerCase();
         switch (command) {
             case ' ': fixedColor = !fixedColor; break;
-            case 's': /*if (speed < 6 || wheelsAngle_Y === 0)*/ speed -= 20; break;//drive--
-            case 'w': /*if (speed < 6 || wheelsAngle_Y===0)*/ speed += 20; break;//drive++
+            case 's': speed -= 20; break;
+            case 'w': speed += 20; break;
             case 'i': if(antennaUpAngle < MAX_UP_ANGLE) antennaUpAngle++; break;
             case 'k': if(antennaUpAngle> MIN_UP_ANGLE) antennaUpAngle--; break;
             case 'j': antennaSideAngle++; break;
             case 'l': antennaSideAngle--; break;
-            case 'a': if (wheelsAngle_Y < 50 /*&& speed===0*/) wheelsAngle_Y++; break;
-            case 'd': if (wheelsAngle_Y > -50 /*&& speed === 0*/) wheelsAngle_Y--; break;
+            case 'a': if (wheelsAngle_Y < 50) wheelsAngle_Y++; break;
+            case 'd': if (wheelsAngle_Y > -50) wheelsAngle_Y--; break;
             case '1': view = TOP_VIEW; break;
             case '2': view = SIDE_VIEW; break;
             case '3': view = FRONT_VIEW; break;
             case '0': view = OUR_VIEW; break;
             case '4': view = OUR_VIEW; break;
-            case 'b': if (speed > 4) {speed -= 5;}
-                    else if (speed < -4) {speed += 5;}
-                    else {speed = 0;}
-                    break;
+            case 'b': slowDown(); break;
         }
     }
 
     render();
+}
+function slowDown(){
+    if (speed > 2 || speed < -2) speed *= 0.85;
+    else if (speed < -0.5 || speed > 0.5) speed *= 0.8;
+    else speed = 0;
 }
 
 function computeView() {
@@ -171,7 +171,7 @@ function computeView() {
     gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
 
     if (view == OUR_VIEW) {
-        modelView = lookAt([VP_DISTANCE, VP_DISTANCE, VP_DISTANCE], [0, 0, 0], [0, 1, 0]);
+        modelView = lookAt([VP_DISTANCE/2, VP_DISTANCE, VP_DISTANCE], [0, 0, 0], [0, 1, 0]);
     } else if (view == TOP_VIEW) {
         modelView = lookAt([0, VP_DISTANCE, 0], [0, 0, 0], [0, 0, -1]);
     } else if (view == SIDE_VIEW) {
@@ -187,27 +187,33 @@ function render() {
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    moveVan();
+
+    computeView();
+    drawScene();
+    
+}
+function moveVan(){
     let distance = speed*1/60;
     
     wheelsAngle_Z -= 360 * distance / (Math.PI * WHEEL_DIAMETER);
     
     vanAngle += distance * 360 / (2 * Math.PI * ( FBWHEEL_DISTANCE / Math.cos((90-wheelsAngle_Y)*DEGREE_TO_RADIAN)));
-    if(vanAngle<0.01)
-        vanAngle=0;
-    
-    xPos += (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN);
+    if((xPos < VP_DISTANCE*aspect*2-BACKTRUCK_X-CABINETRUCK_X*3 && 
+        (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN)>0)||
+        (xPos > 0 && (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN)<0))
+        xPos += (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN);
+    else 
+        speed = 0;
     zPos -= (distance) * Math.sin(vanAngle * DEGREE_TO_RADIAN);
     
-    /*if(wheelsAngle_Y< - 5||wheelsAngle_Y > 5)
+    if(wheelsAngle_Y < - 5 || wheelsAngle_Y > 5)
         wheelsAngle_Y *= 0.99;
     else if (wheelsAngle_Y < - 0.1 || wheelsAngle_Y > 0.1)
         wheelsAngle_Y*=0.9;
     else
         wheelsAngle_Y = 0;
-*/
-    computeView();
-    drawScene();
-    
+
 }
 function computeColor(part) {
     var color;
@@ -215,7 +221,7 @@ function computeColor(part) {
         switch (part) {
             case BACK_TRUCK: color = vec4(1.0, 1.0, 1.0, 1.0); break;
             case CABINE_TRUCK: color = vec4(0.7, 0.7, 0.7, 1.0); break;
-            case SUPPORT_ANTENNA: color = vec4(0.0, 0.0, 0.1, 1.0); break;
+            case SUPPORT_ANTENNA: color = vec4(0.344, 0.0800, 0.800, 1.0); break;
             case WHEEL: color = vec4(0.0, 0.0, 0.0, 1.0); break;
             case WHEEL_WELL: color = vec4(0.6, 0.6, 0.6, 1.0); break;
             case ANTENNA: color = vec4(0.8, 0.89, 0.11, 1.0); break;
@@ -225,73 +231,81 @@ function computeColor(part) {
             default: color = vec4(1.0, 1.0, 1.0, 1.0); break;
         }
 
+        gl.clearColor(0.09, 0.508, 0.90, 1.0);
         gl.uniform1i(fixedColorLoc, 1);
         gl.uniform4fv(colorLoc, color);
     } else {
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.uniform1i(fixedColorLoc, -1);
     }
 
 }
 function drawScene() {
     pushMatrix();
-        floor();
-    popMatrix();
-    pushMatrix();
-    //Truck
-        multTranslation([xPos, 0, zPos]);
-        multRotationY(vanAngle);
+        multTranslation([-VP_DISTANCE*aspect+BACKTRUCK_X,-VP_DISTANCE + FLOOR_SIZE,0]);
+        pushMatrix();
+            floor();
+        popMatrix();
+        pushMatrix();
+        //Truck
+            multTranslation([xPos, (BACKTRUCK_Y + WHEEL_DIAMETER*1.6) / 2, zPos]);
+            multRotationY(vanAngle);
 
-        pushMatrix();
-        //BackTruck
-            backTruck();
-        popMatrix();
-        pushMatrix();
-        //FrontTruck
-            frontTruck();
-        popMatrix();
-        pushMatrix();
-        //Antenna Support
-            antennaSupport();
-        popMatrix();
-        pushMatrix();
-        //Antenna
-            multTranslation([0, BACKTRUCK_Y / 2 + SUPPORT_ANTENNA_Y, 0]);
-            multRotationY(antennaSideAngle);
-            multRotationZ(antennaUpAngle);
             pushMatrix();
-            //Antenna ball
-                //multTranslation([0, BACKTRUCK_Y / 2 + SUPPORT_ANTENNA_Y, 0]);
-                antennaKneecap();
+            //BackTruck
+                backTruck();
             popMatrix();
             pushMatrix();
-            //Antenna arm
-                antennaArm();
+            //FrontTruck
+                frontTruck();
             popMatrix();
             pushMatrix();
-            //Antenna Fore-arm
-                antenaForeArm();
+            //Antenna Support
+                antennaSupport();
             popMatrix();
             pushMatrix();
             //Antenna
-                satelliteDish();
-            popMatrix();
-        popMatrix();
-        pushMatrix();
-        //Eixos
-            pushMatrix();
-                multTranslation([-BACKTRUCK_X / 3, -BACKTRUCK_Y / 2, 0]);
-                wheelAxis();
+                completeAntenna();
             popMatrix();
             pushMatrix();
-                multTranslation([(BACKTRUCK_X + WHEEL_DIAMETER) / 2, -BACKTRUCK_Y / 2, 0]);
-                wheelAxis()
+            //Eixos
+                pushMatrix();
+                    multTranslation([-BACKTRUCK_X / 3, -BACKTRUCK_Y / 2, 0]);
+                    wheelAxis();
+                popMatrix();
+                pushMatrix();
+                    multTranslation([(BACKTRUCK_X + WHEEL_DIAMETER) / 2, -BACKTRUCK_Y / 2, 0]);
+                    wheelAxis()
+                popMatrix();
             popMatrix();
-        popMatrix();
-        //Rodas
-        pushMatrix();
-            drawWheels(wheelsAngle_Y);
+            //Rodas
+            pushMatrix();
+                drawWheels(wheelsAngle_Y);
+            popMatrix();
         popMatrix();
     popMatrix();   
+}
+
+function completeAntenna() {
+    multTranslation([0, BACKTRUCK_Y / 2 + SUPPORT_ANTENNA_Y, 0]);
+    multRotationY(antennaSideAngle);
+    multRotationZ(antennaUpAngle);
+    pushMatrix();
+        //Antenna ball
+        antennaKneecap();
+    popMatrix();
+    pushMatrix();
+        //Antenna arm
+        antennaArm();
+    popMatrix();
+    pushMatrix();
+        //Antenna Fore-arm
+        antenaForeArm();
+    popMatrix();
+    pushMatrix();
+        //Antenna
+        satelliteDish();
+    popMatrix();
 }
 
 function wheelAxis() {
@@ -342,8 +356,6 @@ function drawWheels(frontWheelsAngle) {
 
 function wheels() {
     pushMatrix();
-    //multRotationY(angle);
-    //multRotationZ(wheelsAngle_Z);
         multRotationX(90);
         multScale([WHEEL_DIAMETER, WHEEL_DIAMETER, WHEEL_DIAMETER]);
         gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
@@ -353,28 +365,26 @@ function wheels() {
 }
 function wheelWell() {
     pushMatrix();
-    //multRotationY(angle);
         pushMatrix();
             multRotationZ(90);
-            multScale([WHEEL_DIAMETER / 5, WHEEL_DIAMETER, WHEEL_DIAMETER / 5]);
+            multScale([WHEEL_DIAMETER / 10, WHEEL_DIAMETER, WHEEL_DIAMETER / 10]);
             gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
             computeColor(WHEEL_WELL);
             cylinderDraw(gl, program, false);
         popMatrix();
-        //pushMatrix();
-        multScale([WHEEL_DIAMETER / 5, WHEEL_DIAMETER, WHEEL_DIAMETER / 5]);
-        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
-        computeColor(WHEEL_WELL);
-        cylinderDraw(gl, program, false);
-        //popMatrix();
+        pushMatrix();
+            multScale([WHEEL_DIAMETER / 10, WHEEL_DIAMETER, WHEEL_DIAMETER / 10]);
+            gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+            computeColor(WHEEL_WELL);
+            cylinderDraw(gl, program, false);
+        popMatrix();
     popMatrix();
 }
 
 function floor() {
     computeColor(FLOOR);
-    multTranslation([0,-VP_DISTANCE+FLOOR_SIZE/2,0]);
-    
-    for(let i = -aspect*VP_DISTANCE; i<aspect*VP_DISTANCE; i += FLOOR_SIZE){
+    multTranslation([-FLOOR_SIZE,-FLOOR_SIZE/2,0]);
+    for(let i = 0; i<VP_DISTANCE*aspect*2; i += FLOOR_SIZE){
         for(let j = -3.0*VP_DISTANCE; j<3.0*VP_DISTANCE; j+= FLOOR_SIZE){
             pushMatrix();
                 multTranslation([i,0,j]);
@@ -394,8 +404,8 @@ function satelliteDish() {
 }
 
 function antenaForeArm() {
-    multTranslation([5 * ARM_ANTENNA_SIZE / 6, ARM_ANTENNA_SIZE * 0.43 / 8, 0]);
-    multScale([SUPPORT_ANTENNA_X, ARM_ANTENNA_SIZE * 0.35, SUPPORT_ANTENNA_Z]);
+    multTranslation([5 * ARM_ANTENNA_SIZE / 6, ARM_ANTENNA_SIZE * 0.60 / 8, 0]);
+    multScale([SUPPORT_ANTENNA_X, ARM_ANTENNA_SIZE * 0.60, SUPPORT_ANTENNA_Z]);
     gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
     computeColor(ARM_ANTENNA);
     cubeDraw(gl, program, false);
