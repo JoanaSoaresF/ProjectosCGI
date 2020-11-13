@@ -171,7 +171,7 @@ function computeView() {
     gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
 
     if (view == OUR_VIEW) {
-        modelView = lookAt([VP_DISTANCE/2, VP_DISTANCE, VP_DISTANCE], [0, 0, 0], [0, 1, 0]);
+        modelView = lookAt([VP_DISTANCE/1.5, VP_DISTANCE, VP_DISTANCE], [0, -VP_DISTANCE, 0], [0, 1, 0]);
     } else if (view == TOP_VIEW) {
         modelView = lookAt([0, VP_DISTANCE, 0], [0, 0, 0], [0, 0, -1]);
     } else if (view == SIDE_VIEW) {
@@ -199,14 +199,25 @@ function moveVan(){
     wheelsAngle_Z -= 360 * distance / (Math.PI * WHEEL_DIAMETER);
     
     vanAngle += distance * 360 / (2 * Math.PI * ( FBWHEEL_DISTANCE / Math.cos((90-wheelsAngle_Y)*DEGREE_TO_RADIAN)));
+    
+
     if((xPos < VP_DISTANCE*aspect*2-BACKTRUCK_X-CABINETRUCK_X*3 && 
-        (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN)>0)||
-        (xPos > 0 && (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN)<0))
+            (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN)>0)||
+        (xPos > 0 && 
+            (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN)<0))
         xPos += (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN);
     else 
         speed = 0;
-    zPos -= (distance) * Math.sin(vanAngle * DEGREE_TO_RADIAN);
     
+    if ((zPos < 3.0 * VP_DISTANCE &&
+            (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN) < 0) ||
+        (zPos > -3.0 * VP_DISTANCE && 
+            (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN) > 0))
+        zPos -= (distance) * Math.sin(vanAngle * DEGREE_TO_RADIAN);
+    else
+        speed = 0;
+    
+
     if(wheelsAngle_Y < - 5 || wheelsAngle_Y > 5)
         wheelsAngle_Y *= 0.99;
     else if (wheelsAngle_Y < - 0.1 || wheelsAngle_Y > 0.1)
