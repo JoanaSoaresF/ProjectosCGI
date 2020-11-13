@@ -11,7 +11,8 @@ var modelView;
 var time, view, wheelsAngle_Y, wheelsAngle_Z, drive, antennaUpAngle, antennaSideAngle, speed, xPos, zPos, vanAngle; 
 var fixedColor;
 
-
+const DEGREE_TO_RADIAN = Math.PI / 180;
+const RADIAN_TO_DEGREE = 180 / Math.PI;
 const VP_DISTANCE = 1000;
 //Van back FordTransit
 const BACK_TRUCK = 1;
@@ -49,6 +50,7 @@ const FRONT_VIEW = 3;
 const OUR_VIEW = 0;
 
 const FLOOR = 9;
+const FLOOR_SIZE = 100;
 
 
 // Stack related operations
@@ -114,7 +116,7 @@ window.onload = function () {
     gl = WebGLUtils.setupWebGL(document.getElementById('gl-canvas'));
     fit_canvas_to_window();
 
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearColor(0.09, 0.508, 0.90, 1.0);
 
     gl.enable(gl.DEPTH_TEST);
 
@@ -137,21 +139,21 @@ window.onload = function () {
         var command = (event.key).toLowerCase();
         switch (command) {
             case ' ': fixedColor = !fixedColor; break;
-            case 's': if (speed < 0.3 || wheelsAngle_Y === 0)speed -= 0.1; break;//drive--
-            case 'w': if (speed < 0.3 || wheelsAngle_Y===0) speed += 0.1; break;//drive++
+            case 's': /*if (speed < 6 || wheelsAngle_Y === 0)*/ speed -= 2; break;//drive--
+            case 'w': /*if (speed < 6 || wheelsAngle_Y===0)*/ speed += 2; break;//drive++
             case 'i': antennaUpAngle++; break;
             case 'k': antennaUpAngle--; break;
             case 'j': antennaSideAngle++; break;
             case 'l': antennaSideAngle--; break;
-            case 'a': if (wheelsAngle_Y < 50 && speed===0) wheelsAngle_Y++; break;
-            case 'd': if (wheelsAngle_Y > -50 && speed === 0) wheelsAngle_Y--; break;
+            case 'a': if (wheelsAngle_Y < 50 /*&& speed===0*/) wheelsAngle_Y++; break;
+            case 'd': if (wheelsAngle_Y > -50 /*&& speed === 0*/) wheelsAngle_Y--; break;
             case '1': view = TOP_VIEW; break;
             case '2': view = SIDE_VIEW; break;
             case '3': view = FRONT_VIEW; break;
             case '0': view = OUR_VIEW; break;
             case '4': view = OUR_VIEW; break;
-            case 'b': if (speed > 0.4) {speed -= 0.5;}
-                    else if (speed < -0.4) {speed += 0.5;}
+            case 'b': if (speed > 4) {speed -= 5;}
+                    else if (speed < -4) {speed += 5;}
                     else {speed = 0;}
                     break;
         }
@@ -186,19 +188,24 @@ function render() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     //
-    if (wheelsAngle_Y===0){
-    wheelsAngle_Z -= 360 * speed * time / (Math.PI * WHEEL_DIAMETER);
-    vanAngle += speed * time * Math.sin(wheelsAngle_Y) / (2 * Math.PI * (FBWHEEL_DISTANCE/Math.cos(wheelsAngle_Y)));//wheelsAngle_Z * Math.PI * WHEEL_DIAMETER * Math.cos(wheelsAngle_Y)/(2*Math.PI*FBWHEEL_DISTANCE);
-    xPos += (speed * time)*Math.cos(vanAngle);
-    zPos += (speed * time)*Math.sin(vanAngle);
-    }
-    if(wheelsAngle_Y< - 5||wheelsAngle_Y > 5)
+    let distance = speed*1/60;
+    
+    wheelsAngle_Z -= 360 * distance / (Math.PI * WHEEL_DIAMETER);
+    
+    vanAngle += distance * 360 / (2 * Math.PI * ( FBWHEEL_DISTANCE / Math.cos((90-wheelsAngle_Y)*DEGREE_TO_RADIAN)));
+    if(vanAngle<0.01)
+        vanAngle=0;
+    
+    xPos += (distance) * Math.cos(vanAngle * DEGREE_TO_RADIAN);
+    zPos -= (distance) * Math.sin(vanAngle * DEGREE_TO_RADIAN);
+    
+    /*if(wheelsAngle_Y< - 5||wheelsAngle_Y > 5)
         wheelsAngle_Y *= 0.99;
     else if (wheelsAngle_Y < - 0.1 || wheelsAngle_Y > 0.1)
         wheelsAngle_Y*=0.9;
     else
         wheelsAngle_Y = 0;
-
+*/
     computeView();
     drawScene();
 }
@@ -207,14 +214,14 @@ function computeColor(part) {
     if (fixedColor) {
         switch (part) {
             case BACK_TRUCK: color = vec4(1.0, 1.0, 1.0, 1.0); break;
-            case CABINE_TRUCK: color = vec4(0.8, 0.8, 0.8, 1.0); break;
-            case SUPPORT_ANTENNA: color = vec4(0.3, 0.9, 0.9, 1.0); break;
-            case WHEEL: color = vec4(0.5, 0.3, 0.9, 1.0); break;
-            case WHEEL_WELL: color = vec4(0.8, 0.5, 1.0, 1.0); break;
-            case ANTENNA: color = vec4(0.8, 0.5, 1.0, 1.0); break;
+            case CABINE_TRUCK: color = vec4(0.7, 0.7, 0.7, 1.0); break;
+            case SUPPORT_ANTENNA: color = vec4(0.0, 0.0, 0.1, 1.0); break;
+            case WHEEL: color = vec4(0.0, 0.0, 0.0, 1.0); break;
+            case WHEEL_WELL: color = vec4(0.6, 0.6, 0.6, 1.0); break;
+            case ANTENNA: color = vec4(0.8, 0.89, 0.11, 1.0); break;
             case ARM_ANTENNA: color = vec4(1, 0.5, 0.7, 1.0); break;
-            case KNEECAP: color = vec4(0.8, 1.0, 0.5, 1.0); break;
-            case FLOOR: color = vec4(0.63, 0.5, 0.56, 1.0); break;
+            case KNEECAP: color = vec4(0.123, 0.770, 0.166, 1.0); break;
+            case FLOOR: color = vec4(0.507, 0.860, 0.719, 1.0); break;
             default: color = vec4(1.0, 1.0, 1.0, 1.0); break;
         }
 
@@ -227,18 +234,21 @@ function computeColor(part) {
 }
 
 function drawScene() {
+    pushMatrix();
+        floor();
+    popMatrix();
     //multRotationZ(45);
     pushMatrix();
     //Truck
         multTranslation([xPos, 0, zPos]);
-        //multRotationY(vanAngle);
+        multRotationY(vanAngle);
 
         pushMatrix();
         //BackTruck
             multScale([BACKTRUCK_X, BACKTRUCK_Y, BACKTRUCK_Z]);
             gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
             computeColor(BACK_TRUCK);
-            cubeDrawWireFrame(gl, program, true);
+            cubeDraw(gl, program, false);
         popMatrix();
         pushMatrix();
         //FrontTruck
@@ -246,7 +256,7 @@ function drawScene() {
             multScale([CABINETRUCK_X, CABINETRUCK_Y, CABINETRUCK_Z]);
             gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
             computeColor(CABINE_TRUCK);
-            cubeDrawWireFrame(gl, program, true);
+            cubeDraw(gl, program, false);
 
         popMatrix();
         pushMatrix();
@@ -256,7 +266,7 @@ function drawScene() {
             multScale([SUPPORT_ANTENNA_X, SUPPORT_ANTENNA_Y, SUPPORT_ANTENNA_Z]);
             gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
             computeColor(SUPPORT_ANTENNA);
-            cylinderDraw(gl, program, true);
+            cylinderDraw(gl, program, false);
         popMatrix();
         pushMatrix();
             multTranslation([0, BACKTRUCK_Y / 2 + SUPPORT_ANTENNA_Y, 0]);
@@ -269,7 +279,7 @@ function drawScene() {
                 multScale([SUPPORT_ANTENNA_X * 1.5, SUPPORT_ANTENNA_X * 1.5, SUPPORT_ANTENNA_Z * 1.5]);
                 gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
                 computeColor(KNEECAP);
-                sphereDrawWireFrame(gl, program, true);
+                sphereDrawWireFrame(gl, program, false);
             popMatrix();
             pushMatrix();
             //Antenna arm
@@ -278,7 +288,7 @@ function drawScene() {
                 multScale([SUPPORT_ANTENNA_X, ARM_ANTENNA_SIZE, SUPPORT_ANTENNA_Z]);
                 gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
                 computeColor(SUPPORT_ANTENNA);
-                cylinderDraw(gl, program, true);
+                cylinderDraw(gl, program, false);
             popMatrix();
             pushMatrix();
             //Antenna Fore-arm
@@ -286,7 +296,7 @@ function drawScene() {
                 multScale([SUPPORT_ANTENNA_X, ARM_ANTENNA_SIZE * 0.35, SUPPORT_ANTENNA_Z]);
                 gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
                 computeColor(ARM_ANTENNA);
-                cubeDraw(gl, program, true);
+                cubeDraw(gl, program, false);
             popMatrix();
             pushMatrix();
             //Antenna
@@ -294,7 +304,7 @@ function drawScene() {
                 multScale([ANTENNA_X, ANTENNA_Y, ANTENNA_Z]);
                 gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
                 computeColor(ANTENNA);
-                paraboloidDraw(gl, program, true);
+                paraboloidDraw(gl, program, false);
             popMatrix();
         popMatrix();
         pushMatrix();
@@ -306,7 +316,7 @@ function drawScene() {
                 multScale([WHEEL_DIAMETER / 5, BACKTRUCK_Z, WHEEL_DIAMETER / 5]);
                 gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
                 computeColor(WHEEL_WELL);
-                cylinderDraw(gl, program, true);
+                cylinderDraw(gl, program, false);
             popMatrix();
             pushMatrix();
                 multTranslation([(BACKTRUCK_X + WHEEL_DIAMETER) / 2, -BACKTRUCK_Y / 2, 0]);
@@ -315,7 +325,7 @@ function drawScene() {
                 multScale([WHEEL_DIAMETER / 5, BACKTRUCK_Z, WHEEL_DIAMETER / 5]);
                 gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
                 computeColor(WHEEL_WELL);
-                cylinderDraw(gl, program, true);
+                cylinderDraw(gl, program, false);
             popMatrix();
         //Rodas
             drawWheels(wheelsAngle_Y);
@@ -357,6 +367,7 @@ function drawScene() {
                 wheelWell();
             popMatrix();
         popMatrix();
+        
     }
 
     function wheels() {
@@ -367,7 +378,7 @@ function drawScene() {
             multScale([WHEEL_DIAMETER, WHEEL_DIAMETER, WHEEL_DIAMETER]);
             gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
             computeColor(WHEEL);
-            torusDraw(gl, program, true);
+            torusDraw(gl, program, false);
         popMatrix();
     }
     function wheelWell() {
@@ -378,15 +389,29 @@ function drawScene() {
                 multScale([WHEEL_DIAMETER / 5, WHEEL_DIAMETER, WHEEL_DIAMETER / 5]);
                 gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
                 computeColor(WHEEL_WELL);
-                cylinderDraw(gl, program, true);
+                cylinderDraw(gl, program, false);
             popMatrix();
             //pushMatrix();
             multScale([WHEEL_DIAMETER / 5, WHEEL_DIAMETER, WHEEL_DIAMETER / 5]);
             gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
             computeColor(WHEEL_WELL);
-            cylinderDraw(gl, program, true);
+            cylinderDraw(gl, program, false);
             //popMatrix();
         popMatrix();
     }
 
+    function floor() {
+        computeColor(FLOOR);
+        multTranslation([0,-600,0]);
+        multScale([FLOOR_SIZE,FLOOR_SIZE,FLOOR_SIZE]);
+        for(let i = 0; i<VP_DISTANCE; i = i+FLOOR_SIZE){
+            for(let j = 0; j<10; j++){
+                pushMatrix();
+                    multTranslation([i,0,j*FLOOR_SIZE]);   
+                    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+                    cubeDraw(gl, program, false);
+                popMatrix();
+            }
+        }
+    }
 }
