@@ -1,3 +1,10 @@
+
+/**
+ * Projeto 2 CGI _ Carrinha
+ * Gonçalo Loureço nº55780
+ * Joana Faria nº55754
+ */
+
 var canvas;
 var gl;
 var program;
@@ -45,6 +52,10 @@ const ANTENNA = 7;
 const ANTENNA_X = 100;
 const ANTENNA_Y = 50;
 const ANTENNA_Z = 100;
+//Styling
+const DOOR_THICKNESS=5;
+const GLASS = 10;
+const GLASS_THICKNESS=2;
 
 const TOP_VIEW = 1;
 const SIDE_VIEW = 2;
@@ -239,6 +250,7 @@ function computeColor(part) {
             case ARM_ANTENNA: color = vec4(1, 0.5, 0.7, 1.0); break;
             case KNEECAP: color = vec4(0.123, 0.770, 0.166, 1.0); break;
             case FLOOR: color = vec4(0.507, 0.860, 0.719, 1.0); break;
+            case GLASS: color = vec4(0.0, 0.0, 1.0, 1.0); break;
             default: color = vec4(1.0, 1.0, 1.0, 1.0); break;
         }
 
@@ -253,7 +265,10 @@ function computeColor(part) {
 }
 function drawScene() {
     pushMatrix();
-        multTranslation([-VP_DISTANCE*aspect+BACKTRUCK_X,-VP_DISTANCE + FLOOR_SIZE,0]);
+        //if(view === TOP_VIEW || view ===SIDE_VIEW){
+            multTranslation([-VP_DISTANCE * aspect + BACKTRUCK_X, -VP_DISTANCE + FLOOR_SIZE, -zPos]);
+        //} else
+        //    multTranslation([-VP_DISTANCE*aspect+BACKTRUCK_X,-VP_DISTANCE + FLOOR_SIZE,0]);
         pushMatrix();
             floor();
         popMatrix();
@@ -292,6 +307,10 @@ function drawScene() {
             //Rodas
             pushMatrix();
                 drawWheels(wheelsAngle_Y);
+            popMatrix();
+            pushMatrix();
+                //styling
+                stylingElements()
             popMatrix();
         popMatrix();
     popMatrix();   
@@ -396,7 +415,7 @@ function floor() {
     computeColor(FLOOR);
     multTranslation([-FLOOR_SIZE,-FLOOR_SIZE/2,0]);
     for(let i = 0; i<VP_DISTANCE*aspect*2; i += FLOOR_SIZE){
-        for(let j = -3.0*VP_DISTANCE; j<3.0*VP_DISTANCE; j+= FLOOR_SIZE){
+        for (let j = -3.0*VP_DISTANCE; j<3.0*VP_DISTANCE; j+= FLOOR_SIZE){
             pushMatrix();
                 multTranslation([i,0,j]);
                 multScale([FLOOR_SIZE,FLOOR_SIZE,FLOOR_SIZE]);
@@ -462,3 +481,74 @@ function backTruck() {
     cubeDraw(gl, program, false);
 }
 
+function stylingElements() {
+    pushMatrix();//latdoor
+        multTranslation([BACKTRUCK_X * 0.2, -DOOR_THICKNESS, BACKTRUCK_Z / 2 - DOOR_THICKNESS]);
+        multScale([BACKTRUCK_X * 0.40, BACKTRUCK_Y * 0.8, DOOR_THICKNESS]);
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        computeColor(BACK_TRUCK);
+        cubeDraw(gl, program, false);
+    popMatrix();
+    pushMatrix();//latglass
+        multTranslation([BACKTRUCK_X * 0.2, BACKTRUCK_Y * 0.17, BACKTRUCK_Z / 2 - DOOR_THICKNESS]);
+        multScale([BACKTRUCK_X * 0.36, BACKTRUCK_Y * 0.35, GLASS_THICKNESS]);
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        computeColor(GLASS);
+        cubeDraw(gl, program, false);
+    popMatrix();
+    
+
+    pushMatrix();//latdoor
+        multTranslation([BACKTRUCK_X * 0.2, -DOOR_THICKNESS, -BACKTRUCK_Z / 2 + DOOR_THICKNESS]);
+        multScale([BACKTRUCK_X * 0.40, BACKTRUCK_Y * 0.8, DOOR_THICKNESS]);
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        computeColor(BACK_TRUCK);
+        cubeDraw(gl, program, false);
+    popMatrix();
+    pushMatrix();//latglass
+        multTranslation([BACKTRUCK_X * 0.2, BACKTRUCK_Y * 0.17, -BACKTRUCK_Z / 2 + DOOR_THICKNESS]);
+        multScale([BACKTRUCK_X * 0.36, BACKTRUCK_Y * 0.35, GLASS_THICKNESS]);
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        computeColor(GLASS);
+        cubeDraw(gl, program, false);
+    popMatrix();
+
+
+    pushMatrix();//backdoor
+        multTranslation([-BACKTRUCK_X / 2 + DOOR_THICKNESS, -DOOR_THICKNESS, BACKTRUCK_Z * 0.40/2]);
+        multScale([DOOR_THICKNESS, BACKTRUCK_Y * 0.8, BACKTRUCK_Z * 0.40]);
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        computeColor(BACK_TRUCK);
+        cubeDraw(gl, program, false);
+    popMatrix();
+    pushMatrix();//backdoor
+        multTranslation([-BACKTRUCK_X / 2 + DOOR_THICKNESS, -DOOR_THICKNESS, -BACKTRUCK_Z * 0.40 / 2]);
+        multScale([DOOR_THICKNESS, BACKTRUCK_Y * 0.8, BACKTRUCK_Z * 0.40]);
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        computeColor(BACK_TRUCK);
+        cubeDraw(gl, program, false);
+    popMatrix();
+
+
+    pushMatrix();//frontGlass
+        multTranslation([BACKTRUCK_X/2 + CABINETRUCK_X-2, 0, 0]);
+        multScale([GLASS_THICKNESS, CABINETRUCK_Y * 0.45, CABINETRUCK_Z*0.9]);
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        computeColor(GLASS);
+        cubeDraw(gl, program, false);
+    popMatrix();
+    pushMatrix();//sideWindow
+        multTranslation([BACKTRUCK_X / 2 + CABINETRUCK_X / 2, 0, GLASS_THICKNESS - CABINETRUCK_Z/2]);
+        multScale([CABINETRUCK_X * 0.85, CABINETRUCK_Y * 0.45, GLASS_THICKNESS]);
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        computeColor(GLASS);
+        cubeDraw(gl, program, false);
+    popMatrix();
+    pushMatrix();//sideWindow
+        multTranslation([BACKTRUCK_X / 2 + CABINETRUCK_X / 2, 0, -GLASS_THICKNESS+CABINETRUCK_Z / 2]);
+        multScale([CABINETRUCK_X * 0.85, CABINETRUCK_Y * 0.45, GLASS_THICKNESS]);
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        computeColor(GLASS);
+        cubeDraw(gl, program, false);
+    popMatrix();
+}
