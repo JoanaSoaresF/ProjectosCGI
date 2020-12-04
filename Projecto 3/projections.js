@@ -28,6 +28,9 @@ const DIMETRIA = 1;
 const TRIMETRIA = 2;
 const FREE = 3;
 
+//Temporario
+const VP_DISTANCE = 100;
+
 
 
 function computeInterface() {
@@ -127,7 +130,7 @@ window.onload = function () {
 
     render();
 }
-
+/*
 function computeView() {
     var projection = ortho(-VP_DISTANCE * aspect, VP_DISTANCE * aspect, -VP_DISTANCE, VP_DISTANCE, -3 * VP_DISTANCE, 3 * VP_DISTANCE);
 
@@ -143,7 +146,7 @@ function computeView() {
         modelView = lookAt([VP_DISTANCE, 0, 0], [0, 0, 0], [0, 1, 0]);
     }
 }
-
+*/
 function render() {
     gl.enable(gl.DEPTH_TEST);
     requestAnimationFrame(render);
@@ -151,15 +154,22 @@ function render() {
 
     switch (shape) {
         case 0: gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
-                computeColor(WHEEL_WELL);
-                cubeDraw(gl, program, false);
+                cubeDraw(gl, program, fixedColor);
                 break;
-        case 1: break;
-        case 2: break;
-        case 3: break;
-        case 4: break;
+        case 1: gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+                sphereDraw(gl, program, fixedColor);
+                break;
+        case 2: gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+                torusDraw(gl, program, fixedColor);
+                break;
+        case 3: gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+                cylinderDraw(gl, program, fixedColor);
+                break;
+        case 4: gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+                paraboloidDraw(gl, program, fixedColor);
+                break;
     }
 
-    computeView();
+    //computeView();
     
 }
