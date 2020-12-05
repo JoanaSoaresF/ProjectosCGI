@@ -263,6 +263,7 @@ function perspectiveProjection() {
     let fovy = 2 * Math.atan(VP_DISTANCE / (near * (-d))) * 180 / Math.PI;
 
     var projection = perspective(fovy, aspect, near, (VP_DISTANCE));
+    //TODO
     gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
 
     var eye = vec3(0.0, 0.0, -d);
