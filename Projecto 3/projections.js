@@ -5,13 +5,13 @@ var aspect;
 
 var mProjectionLoc, mModelViewLoc;
 var modelView;
-var fixedColor, hiddenSurfacesMode;
+var filledColor, hiddenSurfacesMode;
 var projectionMode, orthoMode, axonometricMode;
-var gamma, theta, d;
+var a, b, d;
 var shape;
 
 const NONE = 0;
-const BACKFACE_CULLING =1;
+const BACKFACE_CULLING = 1;
 const Z_BUFFER = 2;
 
 const ORTHO = 0;
@@ -28,31 +28,43 @@ const DIMETRIA = 1;
 const TRIMETRIA = 2;
 const FREE = 3;
 
+
+const CUBE = 0;
+const SPHERE = 1;
+const TORUS = 2;
+const CYLINDER = 3;
+const PARABOLOID = 4;
+
+
 //Temporario
-const VP_DISTANCE = 100;
+const VP_DISTANCE = 1;
 
 
 
 function computeInterface() {
     var orthoDiv = document.getElementById("ortho_menu");
-    var perspectiveDiv = document.getElementById("perspetive");
-    var axonometricDiv =  document.getElementById("axonometric_menu");
-    var freeAxonometricDiv =  document.getElementById("free_axonometric");
-   
-    if(projectionMode===ORTHO) {
-        orthoDiv.style.display = "block";
+    var perspectiveDiv = document.getElementById("perspective");
+    var axonometricDiv = document.getElementById("axonometric_menu");
+    var freeAxonometricDiv = document.getElementById("free_axonometric");
+
+    if (projectionMode === ORTHO) {
+        orthoDiv.style.display = "inline";
         perspectiveDiv.style.display = "none";
         axonometricDiv.style.display = "none";
         freeAxonometricDiv.style.display = "none";
-    }else if(projectionMode===AXONOMETRIC) {
+    } else if (projectionMode === AXONOMETRIC) {
         orthoDiv.style.display = "none";
         perspectiveDiv.style.display = "none";
-        axonometricDiv.style.display = "block";
-        freeAxonometricDiv.style.display = "none";
+        axonometricDiv.style.display = "inline";
+        if (axonometricMode == FREE) {
+            freeAxonometricDiv.style.display = "block";
+        } else {
+            freeAxonometricDiv.style.display = "none";
+        }
 
-    } else if(projectionMode===PERSPECTIVE) {
+    } else if (projectionMode === PERSPECTIVE) {
         orthoDiv.style.display = "none";
-        perspectiveDiv.style.display = "block";
+        perspectiveDiv.style.display = "inline";
         axonometricDiv.style.display = "none";
         freeAxonometricDiv.style.display = "none";
     }
@@ -62,7 +74,7 @@ function computeInterface() {
 
 function fit_canvas_to_window() {
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.height = 0.79 * window.innerHeight;
 
     aspect = canvas.width / canvas.height;
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -77,8 +89,15 @@ window.onload = function () {
     canvas = document.getElementById('gl-canvas');
 
     //initialize variables to default values
-    fixedColor = false;
+    filledColor = false;
     hiddenSurfacesMode = NONE;
+    projectionMode = AXONOMETRIC;
+    orthoMode = ALCADO_PRINCIPAL;
+    axonometricMode = DIMETRIA;
+    shape = CUBE;
+    a = 30 * Math.PI / 180.0;
+    b = 30 * Math.PI / 180.0;
+    d = 5;
 
     gl = WebGLUtils.setupWebGL(document.getElementById('gl-canvas'));
     fit_canvas_to_window();
@@ -101,13 +120,47 @@ window.onload = function () {
     document.onkeydown = function (event) {
         var command = (event.key).toLowerCase();
         switch (command) {
-            case 'f': fixedColor = true; break;
-            case 'w': fixedColor = false; break;
-            case 'z': hiddenSurfacesMode = Z_BUFFER; break;
-            case 'b': hiddenSurfacesMode = BACKFACE_CULLING; break;
+            case 'f':
+                filledColor = true;
+                var output = document.getElementById("filled");
+                output.innerHTML = "FILLED";
+                break;
+            case 'w':
+                filledColor = false;
+                var output = document.getElementById("filled");
+                output.innerHTML = "WIREFRAME";
+                break;
+            case 'z':
+                hiddenSurfacesMode = Z_BUFFER;
+                var output = document.getElementById("hidden");
+                output.innerHTML = "Z-BUFFER";
+                break;
+            case 'b':
+                hiddenSurfacesMode = BACKFACE_CULLING;
+                var output = document.getElementById("hidden");
+                output.innerHTML = "CULLING";
+                break;
         }
     }
 
+    document.getElementById("distance").oninput = function () {
+        var x = document.getElementById("distance");
+        d = x.value;
+        var output = document.getElementById("dValue");
+        output.innerHTML = d;
+    };
+    document.getElementById("aSlider").oninput = function () {
+        var x = document.getElementById("aSlider");
+        a = x.value * Math.PI / 180.0;
+        var output = document.getElementById("aValue");
+        output.innerHTML = x.value;
+    };
+    document.getElementById("bSlider").oninput = function () {
+        var x = document.getElementById("bSlider");
+        b = x.value * Math.PI / 180.0;
+        var output = document.getElementById("bValue");
+        output.innerHTML = x.value;
+    };
     document.getElementById("projection").onchange = function () {
         var x = document.getElementById("projection");
         projectionMode = x.options.selectedIndex;
@@ -115,61 +168,143 @@ window.onload = function () {
     };
 
     document.getElementById("axonometric_menu").onchange = function () {
-        var x = document.getElementById("axonometric_menu");
-        axonometricMode = x.options.selectedIndex;
-        if(axonometricMode===FREE) {
-            freeAxonometricDiv.style.display = "block";
-        } else {
-            freeAxonometricDiv.style.display = "none";
-        }
+        var x = document.getElementById("axonometricOptions");
+        axonometricMode = x.selectedIndex;
+        computeInterface();
     };
     document.getElementById("ortho_menu").onchange = function () {
-        var x = document.getElementById("ortho_menu");
+        var x = document.getElementById("orthogonalOptions");
+        computeInterface();
         orthoMode = x.options.selectedIndex;
+
     };
 
+    document.getElementById("objects").onchange = function () {
+        var x = document.getElementById("objects");
+        shape = x.options.selectedIndex;
+    };
+    document.onwheel = function () {
+        //TODO
+    }
+
+    computeInterface();
     render();
 }
-/*
+
 function computeView() {
-    var projection = ortho(-VP_DISTANCE * aspect, VP_DISTANCE * aspect, -VP_DISTANCE, VP_DISTANCE, -3 * VP_DISTANCE, 3 * VP_DISTANCE);
+
+    switch (projectionMode) {
+        case ORTHO: orthoProjection(); break;
+        case AXONOMETRIC: axonometricProjection(); break;
+        case PERSPECTIVE: perspectiveProjection(); break;
+    }
+    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+}
+
+function orthoProjection() {
+    var projection = ortho(-VP_DISTANCE * aspect, VP_DISTANCE * aspect, -VP_DISTANCE, VP_DISTANCE, -VP_DISTANCE * aspect, VP_DISTANCE * aspect);
 
     gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
 
-    if (view == OUR_VIEW) {
-        modelView = lookAt([VP_DISTANCE/1.5, VP_DISTANCE, VP_DISTANCE], [0, -VP_DISTANCE, 0], [0, 1, 0]);
-    } else if (view == TOP_VIEW) {
-        modelView = lookAt([0, VP_DISTANCE, 0], [0, 0, 0], [0, 0, -1]);
-    } else if (view == SIDE_VIEW) {
-        modelView = lookAt([0, 0, VP_DISTANCE], [0, 0, 0], [0, 1, 0]);
-    } else if (view == FRONT_VIEW) {
-        modelView = lookAt([VP_DISTANCE, 0, 0], [0, 0, 0], [0, 1, 0]);
+    switch (orthoMode) {
+        case ALCADO_PRINCIPAL: modelView = lookAt([VP_DISTANCE, 0, 0], [0, 0, 0], [0, 1, 0]); break;
+        case ALCADO_DIREITO: modelView = lookAt([0, 0, VP_DISTANCE], [0, 0, 0], [0, 1, 0]); break;
+        case PLANTA: modelView = lookAt([0, VP_DISTANCE, 0], [0, 0, 0], [0, 0, -1]); break;
     }
 }
-*/
+
+function axonometricProjection() {
+    var projection = ortho(-VP_DISTANCE * aspect, VP_DISTANCE * aspect, -VP_DISTANCE, VP_DISTANCE, -VP_DISTANCE * aspect, VP_DISTANCE * aspect);
+
+    gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
+
+    var eye;
+    var at = vec3(0.0, 0.0, 0.0);
+    var up = vec3(0.0, 1.0, 0.0);
+    var theta, gamma;
+    var radius = VP_DISTANCE / 3; //foste embora do discord
+    var aa, bb;
+
+    switch (axonometricMode) {
+        case ISOMETRIA:
+            aa = 30 * Math.PI / 180.0;
+            bb = aa;
+            break;
+        case DIMETRIA:
+            aa = 42 * Math.PI / 180.0;
+            bb = 7 * Math.PI / 180.0;
+            break;
+        case TRIMETRIA:
+            aa = (54 + 16 / 60) * Math.PI / 180.0;
+            bb = (23 + 16 / 60) * Math.PI / 180.0;
+            break;
+        case FREE:
+            aa = a;
+            bb = b;
+            break;
+    }
+    theta = computeTheta(aa, bb);
+    gamma = computeGamma(aa, bb);
+    eye = vec3(radius * Math.sin(theta), radius * Math.sin(gamma),
+        radius * Math.cos(theta));
+
+    modelView = lookAt(eye, at, up);
+
+}
+function computeTheta(aa, bb) {
+    return Math.atan(Math.sqrt((Math.tan(aa) / Math.tan(bb)))) - Math.PI / 2;
+}
+function computeGamma(aa, bb) {
+    return Math.asin(Math.sqrt((Math.tan(aa) * Math.tan(bb))));
+}
+
+function perspectiveProjection() {
+    let near = Math.max(-d, (-VP_DISTANCE));
+    let fovy = 2 * Math.atan(VP_DISTANCE / (near * (-d))) * 180 / Math.PI;
+
+    var projection = perspective(fovy, aspect, near, (VP_DISTANCE));
+    gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
+
+    var eye = vec3(0.0, 0.0, -d);
+    var at = vec3(0.0, 0.0, 0.0);
+    var up = vec3(0.0, 1.0, 0.0);
+    modelView = lookAt(eye, at, up);
+}
+
+
 function render() {
-    gl.enable(gl.DEPTH_TEST);
     requestAnimationFrame(render);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    if (hiddenSurfacesMode == Z_BUFFER) {
+        gl.enable(gl.DEPTH_TEST);
+    } else if (hiddenSurfacesMode == BACKFACE_CULLING) {
+        gl.enable(gl.CULL_FACE);
+    }
+    computeView();
 
     switch (shape) {
-        case 0: gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
-                cubeDraw(gl, program, fixedColor);
-                break;
-        case 1: gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
-                sphereDraw(gl, program, fixedColor);
-                break;
-        case 2: gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
-                torusDraw(gl, program, fixedColor);
-                break;
-        case 3: gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
-                cylinderDraw(gl, program, fixedColor);
-                break;
-        case 4: gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
-                paraboloidDraw(gl, program, fixedColor);
-                break;
+        case CUBE:
+            cubeDraw(gl, program, filledColor);
+            break;
+        case SPHERE:
+            sphereDraw(gl, program, filledColor);
+            break;
+        case TORUS:
+            torusDraw(gl, program, filledColor);
+            break;
+        case CYLINDER:
+            cylinderDraw(gl, program, filledColor);
+            break;
+        case PARABOLOID:
+            paraboloidDraw(gl, program, filledColor);
+            break;
     }
-
-    //computeView();
-    
 }
+
+
+
+
+
+
+
+

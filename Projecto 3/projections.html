@@ -1,4 +1,3 @@
-
 <!--- 
     Projeto 3, 
     Joana Soares Faria 55754
@@ -39,7 +38,7 @@
             
         }
     </script>
-    
+
     <script type="text/javascript" src="../Common/webgl-utils.js"></script>
     <script type="text/javascript" src="../Common/initShaders.js"></script>
     <script type="text/javascript" src="../Common/MV.js"></script>
@@ -47,25 +46,21 @@
     <script type="text/javascript" src="../Common/cube.js"></script>
     <script type="text/javascript" src="../Common/cylinder.js"></script>
     <script type="text/javascript" src="../Common/torus.js"></script>
-    <script type="text/javascript" src="paraboloid.js"></script>
+    <script type="text/javascript" src="paraboloid2.js"></script>
     <script type="text/javascript" src="projections.js"></script>
 </head>
 
-    
+
 <body style="margin: 0px">
     <div>
-        <canvas id="gl-canvas" width="100%" height="70%">
+        <canvas id="gl-canvas" width="100%" height="80%">
             Ooops! Your browser doen't support WebGL!
         </canvas>
     </div>
-
-    <div>
-        <select id="projection" multiple size="3" value="1">
-            <option value="0">Orthogonal</option>
-            <option value="1">Axonometric</option>
-            <option value="2">Perspective</option>
-        </select>
-        <select id="projection" multiple size="5" value="1">
+    <div style="float: left;padding: 5px; width: 15%; height: 110px;">
+        <span style="padding: 2px; float: left;">Shape to draw: </span>
+        <p></p>
+        <select id="objects" size="5" value="4">
             <option value="0">Cube</option>
             <option value="1">Sphere</option>
             <option value="2">Torus</option>
@@ -73,19 +68,63 @@
             <option value="4">Paraboloid</option>
         </select>
     </div>
-    <div id="perspective">
-        <input id="distance" type="range" min="0" value="4" max="90" step="1">
-    </div> 
-    <div id="free_axonometric">
-        <input id="alphaSlider" type="range" min="0" value="4" max="90" step="1">
-        <input id="gamaSlider" type="range" min="0" value="4" max="90" step="1">
+
+    <div style="float: left;padding: 5px; width: 15%; height: 110px;">
+        <span style="padding: 2px; float: left;">Projection:</span>
+        <p></p>
+        <select id="projection" size="3" value="1">
+            <option value="0">Orthogonal</option>
+            <option value="1">Axonometric</option>
+            <option value="2">Perspective</option>
+        </select>
     </div>
-    <div id="axonometric_menu">                 
-        
-    </div>   
-    <div id = "ortho_menu">
-        
-    </div>    
+
+    <div id="axonometric_menu"
+        style="float: left;padding: 5px; width: 15%; height: 110px;">
+        <span style="padding: 2px; float: left;">Axonometric: </span>
+        <p></p>
+        <select id="axonometricOptions" size="4" value="1">
+            <option value="0">Isometric</option>
+            <option value="1">Diametric</option>
+            <option value="2">Trimetric</option>
+            <option value="3">Free</option>
+        </select>
+    </div>
+    <div id="ortho_menu"
+        style="float: left;padding: 5px; width: 15%; height: 110px;">
+        <span style="padding: 2px; float: left;">Orthogonal: </span>
+        <p></p>
+        <select id="orthogonalOptions" size="3" value="1">
+            <option value="0">Alçado Principal</option>
+            <option value="1">Planta</option>
+            <option value="2">Alçado Lateral Direito</option>
+        </select>
+    </div>
+    <div id="perspective"
+        style="float: left;padding: 5px; width: 20%; height: 110px;">
+        <span>D: </span>
+        <input id="distance" type="range" min="2" value="5" max="20" step="1">
+        <span id="dValue">5</span>
+    </div>
+    <div id="free_axonometric"
+        style="float: left;padding: 5; width: 20%; height: 110px;">
+        <span>A: </span><input id="aSlider" type="range" min="0" value="30" max="90"
+            step="1">
+        <span id="aValue">30</span>
+        <p></p>
+        <span>B: </span><input id="bSlider" type="range" min="0" value="30" max="90"
+            step="1">
+        <span id="bValue">30</span>
+    </div>
+    <div id="free_axonometric"
+        style="float: left; padding: 5px; width: 30%; height: 110px;">
+        <span>Hidden Surfaces:</span>
+        <span id="hidden">NONE</span>
+        <span style="float: right; margin: 0px;">(press Z or B)</span>
+        <span>Filling:</span>
+        <span id="filled">WIREFRAME</span>
+        <span style="float: right; margin: 0px;">(press W or F)</span>
+    </div>
 </body>
+
 </html>
-    
