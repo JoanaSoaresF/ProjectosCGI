@@ -3,12 +3,13 @@ var gl;
 var program;
 var aspect;
 
-var mProjectionLoc, mModelViewLoc;
-var modelView;
+var mProjectionLoc, mViewLoc, mModelLoc;
+var mView;
 var filledColor, hiddenSurfacesMode;
 var projectionMode, orthoMode, axonometricMode;
 var a, b, d;
 var shape;
+var zoom;
 
 const NONE = 0;
 const BACKFACE_CULLING = 1;
@@ -98,6 +99,7 @@ window.onload = function () {
     a = 30 * Math.PI / 180.0;
     b = 30 * Math.PI / 180.0;
     d = 5;
+    zoom = 1;
 
     gl = WebGLUtils.setupWebGL(document.getElementById('gl-canvas'));
     fit_canvas_to_window();
@@ -108,7 +110,9 @@ window.onload = function () {
 
     gl.useProgram(program);
 
-    mModelViewLoc = gl.getUniformLocation(program, "mModelView");
+    mViewLoc = gl.getUniformLocation(program, "mView");
+    mModelLoc = gl.getUniformLocation(program, "mModel");
+    gl.uniformMatrix4fv(mModelLoc, false, flatten(mat4()));
     mProjectionLoc = gl.getUniformLocation(program, "mProjection");
 
     sphereInit(gl);
@@ -150,12 +154,14 @@ window.onload = function () {
         output.innerHTML = d;
     };
     document.getElementById("aSlider").oninput = function () {
+        maxRange();
         var x = document.getElementById("aSlider");
         a = x.value * Math.PI / 180.0;
         var output = document.getElementById("aValue");
         output.innerHTML = x.value;
     };
     document.getElementById("bSlider").oninput = function () {
+        maxRange();
         var x = document.getElementById("bSlider");
         b = x.value * Math.PI / 180.0;
         var output = document.getElementById("bValue");
@@ -183,12 +189,24 @@ window.onload = function () {
         var x = document.getElementById("objects");
         shape = x.options.selectedIndex;
     };
-    document.onwheel = function () {
+    document.onwheel = function (event) {
         //TODO
+        var y = event.deltaY;
+        if (y > 0 && zoom<15) {
+            zoom += 0.1;
+        } else if(zoom>0.79){
+            zoom -= 0.1;
+        }
     }
 
     computeInterface();
     render();
+}
+function maxRange() {
+    var aa = document.getElementById("aSlider");
+    var bb = document.getElementById("bSlider");
+    aa.setAttribute("max", 90 - (b * 180.0 / Math.PI));
+    bb.setAttribute("max", 90 - (a * 180.0 / Math.PI));
 }
 
 function computeView() {
@@ -198,23 +216,25 @@ function computeView() {
         case AXONOMETRIC: axonometricProjection(); break;
         case PERSPECTIVE: perspectiveProjection(); break;
     }
-    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+    gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
 }
 
 function orthoProjection() {
     var projection = ortho(-VP_DISTANCE * aspect, VP_DISTANCE * aspect, -VP_DISTANCE, VP_DISTANCE, -VP_DISTANCE * aspect, VP_DISTANCE * aspect);
+    projection = mult(scalem([zoom, zoom, zoom]), projection);
 
     gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
 
     switch (orthoMode) {
-        case ALCADO_PRINCIPAL: modelView = lookAt([VP_DISTANCE, 0, 0], [0, 0, 0], [0, 1, 0]); break;
-        case ALCADO_DIREITO: modelView = lookAt([0, 0, VP_DISTANCE], [0, 0, 0], [0, 1, 0]); break;
-        case PLANTA: modelView = lookAt([0, VP_DISTANCE, 0], [0, 0, 0], [0, 0, -1]); break;
+        case ALCADO_PRINCIPAL: mView = lookAt([VP_DISTANCE, 0, 0], [0, 0, 0], [0, 1, 0]); break;
+        case ALCADO_DIREITO: mView = lookAt([0, 0, VP_DISTANCE], [0, 0, 0], [0, 1, 0]); break;
+        case PLANTA: mView = lookAt([0, VP_DISTANCE, 0], [0, 0, 0], [0, 0, -1]); break;
     }
 }
 
 function axonometricProjection() {
     var projection = ortho(-VP_DISTANCE * aspect, VP_DISTANCE * aspect, -VP_DISTANCE, VP_DISTANCE, -VP_DISTANCE * aspect, VP_DISTANCE * aspect);
+    projection = mult(scalem([zoom, zoom, zoom]), projection);
 
     gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
 
@@ -248,7 +268,7 @@ function axonometricProjection() {
     eye = vec3(radius * Math.sin(theta), radius * Math.sin(gamma),
         radius * Math.cos(theta));
 
-    modelView = lookAt(eye, at, up);
+    mView = lookAt(eye, at, up);
 
 }
 function computeTheta(aa, bb) {
@@ -260,18 +280,19 @@ function computeGamma(aa, bb) {
 
 function perspectiveProjection() {
     let near = Math.max(-d, (-VP_DISTANCE));
-    let fovy = 2 * Math.atan(VP_DISTANCE / (near * (-d))) * 180 / Math.PI;
+    let fovy = 2 * Math.atan(VP_DISTANCE / (d)) * 180 / Math.PI;
+    /*se pretendermos nao mexer uma face "deslocamos" o solido com a mesma 
+    face ate a origem fazendo d-0.5 no caso do cubo*/
 
     var projection = perspective(fovy, aspect, near, (VP_DISTANCE));
-    //TODO
+    projection = mult(scalem([zoom, zoom, zoom]), projection);
     gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
 
     var eye = vec3(0.0, 0.0, -d);
     var at = vec3(0.0, 0.0, 0.0);
     var up = vec3(0.0, 1.0, 0.0);
-    modelView = lookAt(eye, at, up);
+    mView = lookAt(eye, at, up);
 }
-
 
 function render() {
     requestAnimationFrame(render);
@@ -297,6 +318,8 @@ function render() {
             cylinderDraw(gl, program, filledColor);
             break;
         case PARABOLOID:
+            mView = mult(mView, scalem([0.5, 0.5, 0.5]));
+            gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
             paraboloidDraw(gl, program, filledColor);
             break;
     }

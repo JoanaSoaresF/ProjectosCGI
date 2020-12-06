@@ -14,7 +14,7 @@ var aspect;
 var mProjectionLoc, mModelViewLoc, colorLoc, fixedColorLoc;
 
 var matrixStack = [];
-var modelView;
+var mView;
 var time, view, wheelsAngle_Y, wheelsAngle_Z, antennaUpAngle, antennaSideAngle, speed, xPos, zPos, vanAngle; 
 var fixedColor;
 
@@ -68,31 +68,31 @@ const FLOOR_SIZE = 200;
 
 // Stack related operations
 function pushMatrix() {
-    var m = mat4(modelView[0], modelView[1],
-        modelView[2], modelView[3]);
+    var m = mat4(mView[0], mView[1],
+        mView[2], mView[3]);
     matrixStack.push(m);
 }
 function popMatrix() {
-    modelView = matrixStack.pop();
+    mView = matrixStack.pop();
 }
 // Append transformations to modelView
 function multMatrix(m) {
-    modelView = mult(modelView, m);
+    mView = mult(mView, m);
 }
 function multTranslation(t) {
-    modelView = mult(modelView, translate(t));
+    mView = mult(mView, translate(t));
 }
 function multScale(s) {
-    modelView = mult(modelView, scalem(s));
+    mView = mult(mView, scalem(s));
 }
 function multRotationX(angle) {
-    modelView = mult(modelView, rotateX(angle));
+    mView = mult(mView, rotateX(angle));
 }
 function multRotationY(angle) {
-    modelView = mult(modelView, rotateY(angle));
+    mView = mult(mView, rotateY(angle));
 }
 function multRotationZ(angle) {
-    modelView = mult(modelView, rotateZ(angle));
+    mView = mult(mView, rotateZ(angle));
 }
 
 function fit_canvas_to_window() {
@@ -182,13 +182,13 @@ function computeView() {
     gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
 
     if (view == OUR_VIEW) {
-        modelView = lookAt([VP_DISTANCE/1.5, VP_DISTANCE, VP_DISTANCE], [0, -VP_DISTANCE, 0], [0, 1, 0]);
+        mView = lookAt([VP_DISTANCE/1.5, VP_DISTANCE, VP_DISTANCE], [0, -VP_DISTANCE, 0], [0, 1, 0]);
     } else if (view == TOP_VIEW) {
-        modelView = lookAt([0, VP_DISTANCE, 0], [0, 0, 0], [0, 0, -1]);
+        mView = lookAt([0, VP_DISTANCE, 0], [0, 0, 0], [0, 0, -1]);
     } else if (view == SIDE_VIEW) {
-        modelView = lookAt([0, 0, VP_DISTANCE], [0, 0, 0], [0, 1, 0]);
+        mView = lookAt([0, 0, VP_DISTANCE], [0, 0, 0], [0, 1, 0]);
     } else if (view == FRONT_VIEW) {
-        modelView = lookAt([VP_DISTANCE, 0, 0], [0, 0, 0], [0, 1, 0]);
+        mView = lookAt([VP_DISTANCE, 0, 0], [0, 0, 0], [0, 1, 0]);
     }
 }
 
@@ -342,7 +342,7 @@ function wheelAxis() {
     multRotationY(90);
     multRotationZ(90);
     multScale([WHEEL_DIAMETER / 5, BACKTRUCK_Z, WHEEL_DIAMETER / 5]);
-    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
     computeColor(WHEEL_WELL);
     cylinderDraw(gl, program, false);
 }
@@ -388,7 +388,7 @@ function wheels() {
     pushMatrix();
         multRotationX(90);
         multScale([WHEEL_DIAMETER, WHEEL_DIAMETER, WHEEL_DIAMETER]);
-        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
         computeColor(WHEEL);
         torusDraw(gl, program, false);
     popMatrix();
@@ -398,13 +398,13 @@ function wheelWell() {
         pushMatrix();
             multRotationZ(90);
             multScale([WHEEL_DIAMETER / 10, WHEEL_DIAMETER, WHEEL_DIAMETER / 10]);
-            gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+            gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
             computeColor(WHEEL_WELL);
             cylinderDraw(gl, program, false);
         popMatrix();
         pushMatrix();
             multScale([WHEEL_DIAMETER / 10, WHEEL_DIAMETER, WHEEL_DIAMETER / 10]);
-            gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+            gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
             computeColor(WHEEL_WELL);
             cylinderDraw(gl, program, false);
         popMatrix();
@@ -419,7 +419,7 @@ function floor() {
             pushMatrix();
                 multTranslation([i,0,j]);
                 multScale([FLOOR_SIZE,FLOOR_SIZE,FLOOR_SIZE]);
-                gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+                gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
                 cubeDraw(gl, program, false);
             popMatrix();
         }
@@ -428,7 +428,7 @@ function floor() {
 function satelliteDish() {
     multTranslation([5 * ARM_ANTENNA_SIZE / 6, ARM_ANTENNA_SIZE * 0.35 + ARM_ANTENNA_SIZE * 0.43 / 8, 0]);
     multScale([ANTENNA_X, ANTENNA_Y, ANTENNA_Z]);
-    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
     computeColor(ANTENNA);
     paraboloidDraw(gl, program, false);
 }
@@ -436,7 +436,7 @@ function satelliteDish() {
 function antenaForeArm() {
     multTranslation([5 * ARM_ANTENNA_SIZE / 6, ARM_ANTENNA_SIZE * 0.60 / 8, 0]);
     multScale([SUPPORT_ANTENNA_X, ARM_ANTENNA_SIZE * 0.60, SUPPORT_ANTENNA_Z]);
-    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
     computeColor(ARM_ANTENNA);
     cubeDraw(gl, program, false);
 }
@@ -445,14 +445,14 @@ function antennaArm() {
     multTranslation([ARM_ANTENNA_SIZE / 2, 0, 0]);
     multRotationZ(90);
     multScale([SUPPORT_ANTENNA_X, ARM_ANTENNA_SIZE, SUPPORT_ANTENNA_Z]);
-    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
     computeColor(SUPPORT_ANTENNA);
     cylinderDraw(gl, program, false);
 }
 
 function antennaKneecap() {
     multScale([SUPPORT_ANTENNA_X * 1.5, SUPPORT_ANTENNA_X * 1.5, SUPPORT_ANTENNA_Z * 1.5]);
-    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
     computeColor(KNEECAP);
     sphereDrawWireFrame(gl, program, false);
 }
@@ -461,7 +461,7 @@ function antennaSupport() {
     multTranslation([0, (BACKTRUCK_Y + SUPPORT_ANTENNA_Y) / 2, 0]);
     multRotationY(90);
     multScale([SUPPORT_ANTENNA_X, SUPPORT_ANTENNA_Y, SUPPORT_ANTENNA_Z]);
-    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
     computeColor(SUPPORT_ANTENNA);
     cylinderDraw(gl, program, false);
 }
@@ -469,14 +469,14 @@ function antennaSupport() {
 function frontTruck() {
     multTranslation([(BACKTRUCK_X + CABINETRUCK_X) / 2, -(BACKTRUCK_Y - CABINETRUCK_Y) / 2, 0]);
     multScale([CABINETRUCK_X, CABINETRUCK_Y, CABINETRUCK_Z]);
-    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
     computeColor(CABINE_TRUCK);
     cubeDraw(gl, program, false);
 }
 
 function backTruck() {
     multScale([BACKTRUCK_X, BACKTRUCK_Y, BACKTRUCK_Z]);
-    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+    gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
     computeColor(BACK_TRUCK);
     cubeDraw(gl, program, false);
 }
@@ -485,14 +485,14 @@ function stylingElements() {
     pushMatrix();//latdoor
         multTranslation([BACKTRUCK_X * 0.2, -DOOR_THICKNESS, BACKTRUCK_Z / 2 - DOOR_THICKNESS]);
         multScale([BACKTRUCK_X * 0.40, BACKTRUCK_Y * 0.8, DOOR_THICKNESS]);
-        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
         computeColor(BACK_TRUCK);
         cubeDraw(gl, program, false);
     popMatrix();
     pushMatrix();//latglass
         multTranslation([BACKTRUCK_X * 0.2, BACKTRUCK_Y * 0.17, BACKTRUCK_Z / 2 - DOOR_THICKNESS]);
         multScale([BACKTRUCK_X * 0.36, BACKTRUCK_Y * 0.35, GLASS_THICKNESS]);
-        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
         computeColor(GLASS);
         cubeDraw(gl, program, false);
     popMatrix();
@@ -501,14 +501,14 @@ function stylingElements() {
     pushMatrix();//latdoor
         multTranslation([BACKTRUCK_X * 0.2, -DOOR_THICKNESS, -BACKTRUCK_Z / 2 + DOOR_THICKNESS]);
         multScale([BACKTRUCK_X * 0.40, BACKTRUCK_Y * 0.8, DOOR_THICKNESS]);
-        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
         computeColor(BACK_TRUCK);
         cubeDraw(gl, program, false);
     popMatrix();
     pushMatrix();//latglass
         multTranslation([BACKTRUCK_X * 0.2, BACKTRUCK_Y * 0.17, -BACKTRUCK_Z / 2 + DOOR_THICKNESS]);
         multScale([BACKTRUCK_X * 0.36, BACKTRUCK_Y * 0.35, GLASS_THICKNESS]);
-        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
         computeColor(GLASS);
         cubeDraw(gl, program, false);
     popMatrix();
@@ -517,14 +517,14 @@ function stylingElements() {
     pushMatrix();//backdoor
         multTranslation([-BACKTRUCK_X / 2 + DOOR_THICKNESS, -DOOR_THICKNESS, BACKTRUCK_Z * 0.40/2]);
         multScale([DOOR_THICKNESS, BACKTRUCK_Y * 0.8, BACKTRUCK_Z * 0.40]);
-        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
         computeColor(BACK_TRUCK);
         cubeDraw(gl, program, false);
     popMatrix();
     pushMatrix();//backdoor
         multTranslation([-BACKTRUCK_X / 2 + DOOR_THICKNESS, -DOOR_THICKNESS, -BACKTRUCK_Z * 0.40 / 2]);
         multScale([DOOR_THICKNESS, BACKTRUCK_Y * 0.8, BACKTRUCK_Z * 0.40]);
-        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
         computeColor(BACK_TRUCK);
         cubeDraw(gl, program, false);
     popMatrix();
@@ -533,21 +533,21 @@ function stylingElements() {
     pushMatrix();//frontGlass
         multTranslation([BACKTRUCK_X/2 + CABINETRUCK_X-2, 0, 0]);
         multScale([GLASS_THICKNESS, CABINETRUCK_Y * 0.45, CABINETRUCK_Z*0.9]);
-        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
         computeColor(GLASS);
         cubeDraw(gl, program, false);
     popMatrix();
     pushMatrix();//sideWindow
         multTranslation([BACKTRUCK_X / 2 + CABINETRUCK_X / 2, 0, GLASS_THICKNESS - CABINETRUCK_Z/2]);
         multScale([CABINETRUCK_X * 0.85, CABINETRUCK_Y * 0.45, GLASS_THICKNESS]);
-        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
         computeColor(GLASS);
         cubeDraw(gl, program, false);
     popMatrix();
     pushMatrix();//sideWindow
         multTranslation([BACKTRUCK_X / 2 + CABINETRUCK_X / 2, 0, -GLASS_THICKNESS+CABINETRUCK_Z / 2]);
         multScale([CABINETRUCK_X * 0.85, CABINETRUCK_Y * 0.45, GLASS_THICKNESS]);
-        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(modelView));
+        gl.uniformMatrix4fv(mModelViewLoc, false, flatten(mView));
         computeColor(GLASS);
         cubeDraw(gl, program, false);
     popMatrix();
