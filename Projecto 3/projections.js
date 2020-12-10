@@ -3,17 +3,25 @@ var gl;
 var program;
 var aspect;
 
-var mProjectionLoc, mViewLoc, mModelLoc;
-var mView;
-var filledColor, hiddenSurfacesMode;
+var mProjectionLoc, mViewLoc, mModelLoc, mNormalsLoc, lightPositionLoc, mViewNormalsLoc;
+var materialAmbLoc, materialSpeLoc, shininessLoc, lightAmbLoc, lightDifLoc, lightSpeLoc, illumination1Loc, illumination2Loc;
+var mView, pLoc;
+var filledColor, zBuffer, backfaceCulling;
 var projectionMode, orthoMode, axonometricMode;
 var a, b, d;
 var shape;
 var zoom;
 
-const NONE = 0;
-const BACKFACE_CULLING = 1;
-const Z_BUFFER = 2;
+var lightMode;
+var lightX, lightY, lightZ, lightW;
+var lightR, lightG, lightB;
+var materialKaR, materialKaG, materialKaB;
+var materialKsR, materialKsG, materialKsB;
+var n;
+
+const LIGHT_OFF = 0;
+const LIGHT_PONTUAL = 1;
+const LIGHT_DIRECTIONAL = 2;
 
 const ORTHO = 0;
 const AXONOMETRIC = 1
@@ -75,7 +83,7 @@ function computeInterface() {
 
 function fit_canvas_to_window() {
     canvas.width = window.innerWidth;
-    canvas.height = 0.79 * window.innerHeight;
+    canvas.height = 0.7 * window.innerHeight;
 
     aspect = canvas.width / canvas.height;
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -91,7 +99,8 @@ window.onload = function () {
 
     //initialize variables to default values
     filledColor = false;
-    hiddenSurfacesMode = NONE;
+    zBuffer = false;
+    backfaceCulling = false;
     projectionMode = AXONOMETRIC;
     orthoMode = ALCADO_PRINCIPAL;
     axonometricMode = DIMETRIA;
@@ -100,11 +109,20 @@ window.onload = function () {
     b = 30 * Math.PI / 180.0;
     d = 5;
     zoom = 1;
+    lightMode =LIGHT_OFF;
+    n = 6;
+    lightX = 0.5;
+    lightY = lightZ = 1;
+    lightW = 0.0;
+    lightR = lightG = lightB = 1.0;
+    materialKaR = 1
+    materialKaG = materialKaB = 0;
+    materialKsR = materialKsG = materialKsB = 1;
 
     gl = WebGLUtils.setupWebGL(document.getElementById('gl-canvas'));
     fit_canvas_to_window();
 
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearColor(0.2, 0.2, 0.2, 1.0);
 
     program = initShaders(gl, 'default-vertex', 'default-fragment');
 
@@ -114,6 +132,21 @@ window.onload = function () {
     mModelLoc = gl.getUniformLocation(program, "mModel");
     gl.uniformMatrix4fv(mModelLoc, false, flatten(mat4()));
     mProjectionLoc = gl.getUniformLocation(program, "mProjection");
+
+    mNormalsLoc = gl.getUniformLocation(program, "mNormals");
+    lightPositionLoc = gl.getUniformLocation(program, "lightPosition");
+    mViewNormalsLoc = gl.getUniformLocation(program, "mViewNormals");
+    materialAmbLoc = gl.getUniformLocation(program, "materialAmb");
+    materialDifLoc = gl.getUniformLocation(program, "materialDif");
+    materialSpeLoc = gl.getUniformLocation(program, "materialSpe");
+    shininessLoc = gl.getUniformLocation(program, "shininess");
+    //lightAmbLoc = gl.getUniformLocation(program, "lightAmb");
+    lightDifLoc = gl.getUniformLocation(program, "lightDif");
+    //lightSpeLoc = gl.getUniformLocation(program, "lightSpe");
+    illumination1Loc = gl.getUniformLocation(program, "illumination1");
+    illumination2Loc = gl.getUniformLocation(program, "illumination2");
+    pLoc = gl.getUniformLocation(program, "p");
+
 
     sphereInit(gl);
     cubeInit(gl);
@@ -132,17 +165,17 @@ window.onload = function () {
             case 'w':
                 filledColor = false;
                 var output = document.getElementById("filled");
-                output.innerHTML = "WIREFRAME";
+                output.innerHTML = "WIRE";
                 break;
             case 'z':
-                hiddenSurfacesMode = Z_BUFFER;
-                var output = document.getElementById("hidden");
-                output.innerHTML = "Z-BUFFER";
+                zBuffer = !zBuffer;
+                var output = document.getElementById("z_buffer");
+                output.innerHTML =  zBuffer;
                 break;
             case 'b':
-                hiddenSurfacesMode = BACKFACE_CULLING;
-                var output = document.getElementById("hidden");
-                output.innerHTML = "CULLING";
+                backfaceCulling = !backfaceCulling;
+                var output = document.getElementById("culling");
+                output.innerHTML = backfaceCulling;
                 break;
         }
     }
@@ -192,15 +225,133 @@ window.onload = function () {
     document.onwheel = function (event) {
         //TODO
         var y = event.deltaY;
-        if (y > 0 && zoom<15) {
+        if (y > 0 && zoom<3) {
             zoom += 0.1;
-        } else if(zoom>0.79){
+        } else if(zoom>0.2){
             zoom -= 0.1;
         }
+    
+        var output = document.getElementById("zoom");
+        output.innerHTML = Math.round(zoom*100) + "%";
     }
+    document.getElementById("x_pos").oninput = function () {
+        var pos = document.getElementById("x_pos");
+        lightX = pos.value;
+        var output = document.getElementById("x_value");
+        output.innerHTML = lightX;
+    };
+    document.getElementById("y_pos").oninput = function () {
+        var pos = document.getElementById("y_pos");
+        lightY = pos.value;
+        var output = document.getElementById("y_value");
+        output.innerHTML = lightY;
+    };
+    document.getElementById("z_pos").oninput = function () {
+        var pos = document.getElementById("z_pos");
+        lightZ = pos.value;
+        var output = document.getElementById("z_value");
+        output.innerHTML = lightZ;
+    };
+    document.getElementById("r").oninput = function () {
+        var pos = document.getElementById("r");
+        lightR = pos.value;
+        var output = document.getElementById("r_value");
+        output.innerHTML = lightR;
+    };
+    document.getElementById("g").oninput = function () {
+        var pos = document.getElementById("g");
+        lightG = pos.value;
+        var output = document.getElementById("g_value");
+        output.innerHTML = lightG;
+    };
+    document.getElementById("b").oninput = function () {
+        var pos = document.getElementById("b");
+        lightB = pos.value;
+        var output = document.getElementById("b_value");
+        output.innerHTML = lightB;
+    };
+    document.getElementById("r_ka").oninput = function () {
+        var pos = document.getElementById("r_ka");
+        materialKaR = pos.value;
+        var output = document.getElementById("r_ka_value");
+        output.innerHTML = materialKaR;
+    };
+    document.getElementById("g_ka").oninput = function () {
+        var pos = document.getElementById("g_ka");
+        materialKaG = pos.value;
+        var output = document.getElementById("g_ka_value");
+        output.innerHTML = materialKaG;
+    };
+    document.getElementById("b_ka").oninput = function () {
+        var pos = document.getElementById("b_ka");
+        materialKaB = pos.value;
+        var output = document.getElementById("b_ka_value");
+        output.innerHTML = materialKsB;
+    };
+    document.getElementById("r_ks").oninput = function () {
+        var pos = document.getElementById("r_ks");
+        materialKsR = pos.value;
+        var output = document.getElementById("r_ks_value");
+        output.innerHTML = materialKsR;
+    };
+    document.getElementById("g_ks").oninput = function () {
+        var pos = document.getElementById("g_ks");
+        materialKsG = pos.value;
+        var output = document.getElementById("g_ks_value");
+        output.innerHTML = materialKsG;
+    };
+    document.getElementById("b_ks").oninput = function () {
+        var pos = document.getElementById("b_ks");
+        materialKsB = pos.value;
+        var output = document.getElementById("b_ks_value");
+        output.innerHTML = materialKsB;
+    };
+    document.getElementById("n").oninput = function () {
+        var pos = document.getElementById("n");
+        n = pos.value;
+        var output = document.getElementById("n_value");
+        output.innerHTML = n;
+    };
+    document.getElementById("light").onchange = function () {
+        var x = document.getElementById("light");
+        lightMode = x.selectedIndex;
+        if(lightMode==LIGHT_PONTUAL) {
+            lightW = 1;
+        } else if(lightMode==LIGHT_DIRECTIONAL) {
+            lightW=0;
+        }
+    };
 
     computeInterface();
     render();
+}
+function illumination() {
+
+    gl.uniform1i(illumination1Loc, lightMode);
+    gl.uniform1i(illumination2Loc, lightMode);
+
+    if( lightMode != LIGHT_OFF) {
+        var mNormals = normalMatrix(mView);
+        var mViewNormals = normalMatrix(mView);
+        var lightPosition = vec4(lightX, lightY, lightZ, lightW);
+
+        gl.uniformMatrix4fv(mNormalsLoc, false, flatten(mNormals));
+        gl.uniformMatrix4fv(mViewNormalsLoc, false, flatten(mViewNormals));
+        gl.uniform4fv(lightPositionLoc, flatten(lightPosition));
+
+        var lightDif = vec3(lightR, lightG, lightB);
+        var materialAmb = vec3(materialKaR, materialKaG, materialKaB);
+        var materialDif = materialAmb;
+        var materialSpec = vec3(materialKsR, materialKsG, materialKsB);
+      
+        gl.uniform3fv(lightDifLoc, flatten(lightDif));
+        gl.uniform3fv(materialAmbLoc, flatten(materialAmb));
+        gl.uniform3fv(materialDifLoc, flatten(materialDif));
+        gl.uniform3fv(materialSpeLoc, flatten(materialSpec));
+        gl.uniform1f(shininessLoc, n);
+
+    } 
+    
 }
 function maxRange() {
     var aa = document.getElementById("aSlider");
@@ -212,28 +363,32 @@ function maxRange() {
 function computeView() {
 
     switch (projectionMode) {
-        case ORTHO: orthoProjection(); break;
-        case AXONOMETRIC: axonometricProjection(); break;
-        case PERSPECTIVE: perspectiveProjection(); break;
+        case ORTHO: orthoProjection(); 
+        gl.uniform1i(pLoc, ORTHO);break;
+        case AXONOMETRIC: axonometricProjection();
+        gl.uniform1i(pLoc, AXONOMETRIC); break;
+        case PERSPECTIVE: perspectiveProjection(); 
+        gl.uniform1i(pLoc, PERSPECTIVE); break;
     }
     gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
 }
 
 function orthoProjection() {
-    var projection = ortho(-VP_DISTANCE * aspect, VP_DISTANCE * aspect, -VP_DISTANCE, VP_DISTANCE, -VP_DISTANCE * aspect, VP_DISTANCE * aspect);
+    var projection = ortho(-VP_DISTANCE * aspect, VP_DISTANCE * aspect, -VP_DISTANCE, VP_DISTANCE, -3 * VP_DISTANCE, 3 * VP_DISTANCE);
     projection = mult(scalem([zoom, zoom, zoom]), projection);
 
     gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
 
     switch (orthoMode) {
-        case ALCADO_PRINCIPAL: mView = lookAt([VP_DISTANCE, 0, 0], [0, 0, 0], [0, 1, 0]); break;
-        case ALCADO_DIREITO: mView = lookAt([0, 0, VP_DISTANCE], [0, 0, 0], [0, 1, 0]); break;
+        case ALCADO_PRINCIPAL: mView = lookAt([0, 0, VP_DISTANCE], [0, 0, 0], [0, 1, 0]); break;
         case PLANTA: mView = lookAt([0, VP_DISTANCE, 0], [0, 0, 0], [0, 0, -1]); break;
+        case ALCADO_DIREITO: mView = lookAt([VP_DISTANCE, 0, 0], [0, 0, 0], [0, 1, 0]); break;
     }
 }
 
 function axonometricProjection() {
-    var projection = ortho(-VP_DISTANCE * aspect, VP_DISTANCE * aspect, -VP_DISTANCE, VP_DISTANCE, -VP_DISTANCE * aspect, VP_DISTANCE * aspect);
+    var projection = ortho(-VP_DISTANCE * aspect, VP_DISTANCE * aspect, -VP_DISTANCE, VP_DISTANCE, -3* VP_DISTANCE, 3* VP_DISTANCE);
+    
     projection = mult(scalem([zoom, zoom, zoom]), projection);
 
     gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
@@ -242,7 +397,6 @@ function axonometricProjection() {
     var at = vec3(0.0, 0.0, 0.0);
     var up = vec3(0.0, 1.0, 0.0);
     var theta, gamma;
-    var radius = VP_DISTANCE / 3; //foste embora do discord
     var aa, bb;
 
     switch (axonometricMode) {
@@ -263,32 +417,30 @@ function axonometricProjection() {
             bb = b;
             break;
     }
-    theta = computeTheta(aa, bb);
-    gamma = computeGamma(aa, bb);
-    eye = vec3(radius * Math.sin(theta), radius * Math.sin(gamma),
-        radius * Math.cos(theta));
-
+    theta = computeTheta(aa, bb)*180/Math.PI;
+    gamma = computeGamma(aa, bb)*180/Math.PI;
+    eye = vec4(0, 0, 1, 1);
+    eye = mult(rotateY(-theta), mult(rotateX(-gamma), eye));
+    eye = [eye[0], eye[1], eye[2]];
     mView = lookAt(eye, at, up);
 
 }
 function computeTheta(aa, bb) {
-    return Math.atan(Math.sqrt((Math.tan(aa) / Math.tan(bb)))) - Math.PI / 2;
+    return Math.atan(Math.sqrt((Math.tan(aa) / Math.tan(bb)))) - Math.PI/2;
 }
 function computeGamma(aa, bb) {
     return Math.asin(Math.sqrt((Math.tan(aa) * Math.tan(bb))));
 }
 
 function perspectiveProjection() {
-    let near = Math.max(-d, (-VP_DISTANCE));
-    let fovy = 2 * Math.atan(VP_DISTANCE / (d)) * 180 / Math.PI;
-    /*se pretendermos nao mexer uma face "deslocamos" o solido com a mesma 
-    face ate a origem fazendo d-0.5 no caso do cubo*/
-
-    var projection = perspective(fovy, aspect, near, (VP_DISTANCE));
+    let near = Math.min(d, VP_DISTANCE)*zoom;
+    let fovy = 2 * Math.atan(VP_DISTANCE/ (d*aspect)) * 180 / Math.PI;
+ 
+    var projection = perspective(fovy, aspect, near, -3 * VP_DISTANCE);
     projection = mult(scalem([zoom, zoom, zoom]), projection);
     gl.uniformMatrix4fv(mProjectionLoc, false, flatten(projection));
 
-    var eye = vec3(0.0, 0.0, -d);
+    var eye = vec3(0.0, 0.0, d);
     var at = vec3(0.0, 0.0, 0.0);
     var up = vec3(0.0, 1.0, 0.0);
     mView = lookAt(eye, at, up);
@@ -297,12 +449,18 @@ function perspectiveProjection() {
 function render() {
     requestAnimationFrame(render);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    if (hiddenSurfacesMode == Z_BUFFER) {
-        gl.enable(gl.DEPTH_TEST);
-    } else if (hiddenSurfacesMode == BACKFACE_CULLING) {
+    if (backfaceCulling) {
         gl.enable(gl.CULL_FACE);
+    } else {
+        gl.disable(gl.CULL_FACE);
+    }
+    if (zBuffer) {
+        gl.enable(gl.DEPTH_TEST);
+    } else {
+        gl.disable(gl.DEPTH_TEST);
     }
     computeView();
+    illumination();
 
     switch (shape) {
         case CUBE:
@@ -324,11 +482,3 @@ function render() {
             break;
     }
 }
-
-
-
-
-
-
-
-
