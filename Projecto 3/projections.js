@@ -19,6 +19,12 @@ var materialKaR, materialKaG, materialKaB;
 var materialKsR, materialKsG, materialKsB;
 var n;
 
+var activeMouse;
+var mouseX;
+var mouseY;
+var mMove, mModel;
+
+
 const LIGHT_OFF = 0;
 const LIGHT_PONTUAL = 1;
 const LIGHT_DIRECTIONAL = 2;
@@ -119,6 +125,11 @@ window.onload = function () {
     materialKaG = materialKaB = 0;
     materialKsR = materialKsG = materialKsB = 1;
 
+    activeMouse = false;
+    mouseX = 0;
+    mouseY = 0;
+    mMove = mModel = mat4();
+
     gl = WebGLUtils.setupWebGL(document.getElementById('gl-canvas'));
     fit_canvas_to_window();
 
@@ -179,6 +190,43 @@ window.onload = function () {
                 break;
         }
     }
+
+    document.onmousedown = function (event){
+        activeMouse = true;
+        mouseX = event.clientX;
+        mouseY = event.clientY;
+
+
+        console.log(activeMouse);
+    }
+    document.onmouseup = function (event) {
+        activeMouse = false;
+    }
+    document.onmousemove = function (event) {
+        if (!activeMouse) {
+            return;
+        }
+        var newX = event.clientX;
+        var newY = event.clientY;
+
+        var dX = newX - mouseX;
+        var dY = newY - mouseY;
+
+        var yAngle = Math.atan(dX / (aspect*100)) * 180 / Math.PI;
+        var xAngle = Math.atan(dY / (aspect*100)) * 180 / Math.PI;
+
+        console.log("y=  " + yAngle);
+        //console.log(mView);
+
+        mMove = mult(mMove, rotateY(-yAngle));
+        mMove = mult(mMove, rotateX(-xAngle));
+
+
+
+        mouseX = newX
+        mouseY = newY;
+    }
+
 
     document.getElementById("distance").oninput = function () {
         var x = document.getElementById("distance");
@@ -370,7 +418,7 @@ function computeView() {
         case PERSPECTIVE: perspectiveProjection(); 
         gl.uniform1i(pLoc, PERSPECTIVE); break;
     }
-    gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
+    //gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
 }
 
 function orthoProjection() {
@@ -462,17 +510,24 @@ function render() {
     computeView();
     illumination();
 
+    mView = mult(mView, mMove);
+
+
     switch (shape) {
         case CUBE:
+            gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
             cubeDraw(gl, program, filledColor);
             break;
         case SPHERE:
+            gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
             sphereDraw(gl, program, filledColor);
             break;
         case TORUS:
+            gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
             torusDraw(gl, program, filledColor);
             break;
         case CYLINDER:
+            gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
             cylinderDraw(gl, program, filledColor);
             break;
         case PARABOLOID:
