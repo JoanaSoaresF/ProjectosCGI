@@ -20,8 +20,8 @@ var materialKsR, materialKsG, materialKsB;
 var n;
 
 var activeMouse;
-var mouseX;
-var mouseY;
+var mouseX, mouseY;
+var yTot, xTot;
 var mMove, mModel;
 
 
@@ -141,7 +141,7 @@ window.onload = function () {
 
     mViewLoc = gl.getUniformLocation(program, "mView");
     mModelLoc = gl.getUniformLocation(program, "mModel");
-    gl.uniformMatrix4fv(mModelLoc, false, flatten(mat4()));
+    gl.uniformMatrix4fv(mModelLoc, false, flatten(mModel));
     mProjectionLoc = gl.getUniformLocation(program, "mProjection");
 
     mNormalsLoc = gl.getUniformLocation(program, "mNormals");
@@ -188,6 +188,9 @@ window.onload = function () {
                 var output = document.getElementById("culling");
                 output.innerHTML = backfaceCulling;
                 break;
+            case 'r':
+                mModel= mat4();
+            
         }
     }
 
@@ -218,8 +221,8 @@ window.onload = function () {
         console.log("y=  " + yAngle);
         //console.log(mView);
 
-        mMove = mult(mMove, rotateY(-yAngle));
-        mMove = mult(mMove, rotateX(-xAngle));
+        mMove = mult(mMove, rotateY(yAngle));
+        mMove = mult(mMove, rotateX(xAngle));
 
 
 
@@ -418,7 +421,7 @@ function computeView() {
         case PERSPECTIVE: perspectiveProjection(); 
         gl.uniform1i(pLoc, PERSPECTIVE); break;
     }
-    //gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
+    gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
 }
 
 function orthoProjection() {
@@ -510,29 +513,30 @@ function render() {
     computeView();
     illumination();
 
-    mView = mult(mView, mMove);
-
+    //mView = mult(mView, mMove);
+    mModel = mult(mModel, mMove);
+    mMove = mat4();
 
     switch (shape) {
         case CUBE:
-            gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
+            gl.uniformMatrix4fv(mModelLoc, false, flatten(mModel));
             cubeDraw(gl, program, filledColor);
             break;
         case SPHERE:
-            gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
+            gl.uniformMatrix4fv(mModelLoc, false, flatten(mModel));
             sphereDraw(gl, program, filledColor);
             break;
         case TORUS:
-            gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
+            gl.uniformMatrix4fv(mModelLoc, false, flatten(mModel));
             torusDraw(gl, program, filledColor);
             break;
         case CYLINDER:
-            gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
+            gl.uniformMatrix4fv(mModelLoc, false, flatten(mModel));
             cylinderDraw(gl, program, filledColor);
             break;
         case PARABOLOID:
             mView = mult(mView, scalem([0.5, 0.5, 0.5]));
-            gl.uniformMatrix4fv(mViewLoc, false, flatten(mView));
+            gl.uniformMatrix4fv(mModelLoc, false, flatten(mModel));
             paraboloidDraw(gl, program, filledColor);
             break;
     }
