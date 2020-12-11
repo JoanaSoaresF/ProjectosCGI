@@ -78,7 +78,7 @@
 
         void main() {
             if(illumination2<=0) {
-                gl_FragColor = abs(vec4(fNormal, 1.0));
+                gl_FragColor = vec4(fNormal, 1.0);
             } else {
                 vec3 L = normalize(fLight);
                 vec3 V = normalize(fViewer);
@@ -118,8 +118,7 @@
         </canvas>
     </div>
     <div style="float: left;padding: 5px; width: 15%; height: 110px;">
-        <span style="padding: 2px; float: left;">Shape to draw: </span>
-        <p></p>
+        <p style="margin: 2px;">Shape to draw: </p>
         <select id="objects" size="5" value="4">
             <option value="0">Cube</option>
             <option value="1">Sphere</option>
@@ -129,9 +128,8 @@
         </select>
     </div>
 
-    <div style="float: left;padding: 5px; width: 14%; height: 110px;">
-        <span style="padding: 2px; float: left;">Projection:</span>
-        <p></p>
+    <div style="float: left;padding: 5px; width: 15%; height: 110px;">
+        <p style="margin: 2px;">Projection:</p>
         <select id="projection" size="3" value="1">
             <option value="0">Orthogonal</option>
             <option value="1">Axonometric</option>
@@ -141,8 +139,7 @@
 
     <div id="axonometric_menu"
         style="float: left;padding: 5px; width: 15%; height: 110px;">
-        <span style="padding: 2px; float: left;">Axonometric: </span>
-        <p></p>
+        <p style="margin: 2px;">Axonometric: </p>
         <select id="axonometricOptions" size="4" value="1">
             <option value="0">Isometric</option>
             <option value="1">Diametric</option>
@@ -152,8 +149,7 @@
     </div>
     <div id="ortho_menu"
         style="float: left;padding: 5px; width: 20%; height: 110px;">
-        <span style="padding: 2px; float: left;">Orthogonal: </span>
-        <p></p>
+        <o style="margin: 2px;">Orthogonal: </o>
         <select id="orthogonalOptions" size="3" value="1">
             <option value="0">Alçado Principal</option>
             <option value="1">Planta</option>
@@ -164,7 +160,8 @@
         <div id="perspective"
             style="float: left;padding: 5px; width: 20%; height: 110px;">
             <span>D: </span>
-            <input id="distance" type="range" min="0.05" value="5" max="5" step="0.05">
+            <input id="distance" type="range" min="0.04" value="5" max="10"
+                step="0.05">
             <span id="dValue">5</span>
         </div>
         <div id="free_axonometric"
@@ -177,8 +174,7 @@
                 max="90" step="1">
             <span id="bValue">30</span>
         </div>
-        <div
-            style="float: left; padding: 5px; width: 20%; height: 110px;">
+        <div style="float: left; padding: 5px; width: 20%; height: 110px;">
             <p style="margin: 0px;">Z-Buffer (Z):
                 <span id="z_buffer">False</span>
             </p>
@@ -197,19 +193,19 @@
     </div>
     <div>
         <p style="float: left; width: 100%; margin: 0px;">Illumination</p>
-        <div style="float: left;padding: 15px;">
-            <select id="light" size="3" value="1">
+        <div style="float: left;padding: 5px; width: 20%;">
+            <select id="light" size="3" value="0">
                 <option value="0">Desligado</option>
                 <option value="1">Pontual Light</option>
                 <option value="2">Direction Light</option>
             </select>
         </div>
 
-        <div id="light_pos" style="float: left; width: 30%;">
+        <div id="light_pos" style="float: left;padding: 5px; width: 20%;">
             <p style="margin: 0px;">Position/Direction:</p>
             <span>X: </span>
             <input id="x_pos" type="range" min="-1" value="0.5" max="1" step="0.1">
-            <span id="x_value">0</span>
+            <span id="x_value">0.5</span>
             <p style="margin: 0px;"></p>
             <span>Y: </span>
             <input id="y_pos" type="range" min="-1" value="1" max="1" step="0.1">
@@ -219,7 +215,7 @@
             <input id="z_pos" type="range" min="-1" value="1" max="1" step="0.1">
             <span id="z_value">0</span>
         </div>
-        <div id="light_color" style="float: left; width: 30%;">
+        <div id="light_color" style="float: left; padding: 5px; width: 20%;">
             <p style="margin: 0px;">Color:</p>
             <span>R: </span>
             <input id="r" type="range" min="0" value="1" max="1" step="0.1">
@@ -234,9 +230,9 @@
             <span id="b_value">1</span>
         </div>
     </div>
-    <div>
+    <div id="material">
         <p style="float: left; width: 100%; margin: 0px;">Material</p>
-               <div id="ka" style="float: left; width: 30%;">
+        <div id="ka" style="float: left; padding: 5px; width: 20%;">
             <p style="margin: 0px;">Ka:</p>
             <span>R: </span>
             <input id="r_ka" type="range" min="0" value="1" max="1" step="0.1">
@@ -250,7 +246,7 @@
             <input id="b_ka" type="range" min="0" value="0" max="1" step="0.1">
             <span id="b_ka_value">0</span>
         </div>
-        <div id="ks" style="float: left; width: 30%;">
+        <div id="ks" style="float: left; padding: 5px; width: 20%;">
             <p style="margin: 0px;">Ks:</p>
             <span>R: </span>
             <input id="r_ks" type="range" min="0" value="1" max="1" step="0.1">
@@ -264,7 +260,7 @@
             <input id="b_ks" type="range" min="0" value="1" max="1" step="0.1">
             <span id="b_ks_value">1</span>
         </div>
-        <div style="float: left; width: 30%;">
+        <div style="float: left;padding: 5px; width: 20%;">
             <p style="margin: 0px;">Shininess:</p>
             <input id="n" type="range" min="1" value="6" max="20" step="1">
             <span id="n_value">6</span>

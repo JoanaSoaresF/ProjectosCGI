@@ -1,3 +1,8 @@
+/*
+Projeto 3, 
+Joana Soares Faria 55754
+Gonçalo Martins Lourenço 55780 */
+
 var paraboloid_points = [];
 var paraboloid_normals = [];
 var paraboloid_faces = [];
