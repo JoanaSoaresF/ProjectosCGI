@@ -403,7 +403,7 @@ function illumination() {
     gl.uniform1i(illumination2Loc, lightMode);
 
     if (lightMode != LIGHT_OFF) {
-        var mNormals = normalMatrix(mView);
+        var mNormals = normalMatrix(mult(mView, mModel));
         var mViewNormals = normalMatrix(mView);
         var lightPosition = vec4(lightX, lightY, lightZ, lightW);
 
